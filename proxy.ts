@@ -14,14 +14,21 @@ const isProtectedRoute = createRouteMatcher([
   "/:locale/profile(.*)",
 ]);
 
-// Clerk v6+ da `auth` va `request` parametrlari quyidagicha ishlatiladi:
+// API va Webhook yo'llarini aniqlaymiz
+const isApiOrWebhookRoute = createRouteMatcher(["/api(.*)", "/trpc(.*)"]);
+
 export default clerkMiddleware(async (auth, request: NextRequest) => {
+  // 1. Himoyalangan sahifalarni tekshirish
   if (isProtectedRoute(request)) {
-    // ❌ Xato bo'lgan usullar: auth().protect(), await (await auth()).protect()
-    // ✅ To'g'ri usul: auth.protect() ning o'zi!
     await auth.protect();
   }
 
+  // 2. Agar so'rov API yoki Webhook bo'lsa, intl (yo'naltirish) qilmasdan o'tkazib yuboramiz!
+  if (isApiOrWebhookRoute(request)) {
+    return;
+  }
+
+  // 3. Qolgan barcha oddiy sahifalar uchun intl ni ishlatamiz
   return intlMiddleware(request);
 });
 
