@@ -1,0 +1,18 @@
+import { getRequestConfig } from "next-intl/server";
+import { routing } from "./routing";
+
+export default getRequestConfig(async ({ requestLocale }) => {
+  let locale = await requestLocale;
+
+  // "as any" o'rniga "as string" yoki biz yaratgan tipni ishlating
+  // includes ichidagi tekshiruvni TypeScript formatiga moslash
+  if (!locale || !(routing.locales as readonly string[]).includes(locale)) {
+    locale = routing.defaultLocale;
+  }
+
+  return {
+    locale,
+    // Papka nomi "locales" bo'lgani uchun yo'lni o'zgartiramiz:
+    messages: (await import(`../locales/${locale}.json`)).default,
+  };
+});

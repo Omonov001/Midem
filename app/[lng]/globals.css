@@ -1,0 +1,48 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* Bu qator Tailwind'ga html dagi .dark klassini o'qishni o'rgatadi */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #000000;
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ffffff;
+}
+
+/* Saytingiz foni o'zgarishi uchun */
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+@theme {
+  /* Dark mode varianti */
+  --variant-dark: .dark &;
+
+  /* CSS o'zgaruvchilarni Tailwind ranglariga bog'lash */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --foreground: #020617;
+  }
+
+  .dark {
+    --background: #020617;
+    --foreground: #ffffff;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    @apply transition-colors duration-300;
+  }
+}
