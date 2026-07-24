@@ -54,6 +54,15 @@ export async function POST(req: Request) {
       email: email_addresses[0]?.email_address,
       picture: image_url,
       role: "user",
+
+      // ✅ Dashboard uchun boshlang'ich qiymatlar:
+      balance: 0,
+      gamesCount: 0,
+      achievements: 0,
+      playtime: 0,
+      level: 1,
+      rank: "bronze",
+      isPremium: false,
     });
 
     return NextResponse.json({ message: "OK", user: mongoUser });
