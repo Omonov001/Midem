@@ -1148,7 +1148,7 @@ export default function CreateGamePage() {
               <div className="space-y-4 pt-1">
                 {/* PRICE */}
                 <input
-                  type="text"
+                  type="number"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="Narx (Masalan: 9.99$)"
