@@ -1,6 +1,9 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
 import {
   Newspaper,
   Image as ImageIcon,
@@ -12,9 +15,12 @@ import {
   Maximize2,
   Eye,
   EyeOff,
-  Link as LinkIcon, // Slug uchun yangi ikonka
+  Link as LinkIcon,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { handleGameUpload } from "@/lib/upload";
 
 const LANGUAGES = [
   { code: "uz", label: "O'zbekcha" },
@@ -24,32 +30,47 @@ const LANGUAGES = [
 ];
 
 interface BannerImage {
-  file: File;
+  file: File | null;
   preview: string;
+  url?: string;
 }
 
-// Matndan chiroyli slug yasovchi yordamchi funksiya
 const generateSlug = (text: string): string => {
   return text
     .toLowerCase()
-    .replace(/['’‘` roll]/g, "") // Tutuq belgilari va qo'shtirnoqlarni tozalash
-    .replace(/[oO]’|[oO]‘/g, "o")
-    .replace(/[gG]’|[gG]‘/g, "g")
-    .replace(/[^a-z0-9а-яёўқғҳ\s-]/g, "") // Maxsus belgilarni tozalash (kirillni ham qo'llaydi)
+    .replace(/['’‘`ʻʼ]/g, "")
+    .replace(/o['’‘`ʻʼ]/g, "o")
+    .replace(/g['’‘`ʻʼ]/g, "g")
+    .replace(/[^a-z0-9а-яёўқғҳ\s-]/g, "")
     .trim()
-    .replace(/\s+/g, "-") // Bo'shliqlarni chiziqchaga almashtirish
-    .replace(/-+/g, "-"); // Ketma-ket chiziqchalarni bittaga tushirish
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 };
 
 export default function CreateNewsPage() {
+  const router = useRouter();
   const [activeLang, setActiveLang] = useState("uz");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activePreviewImage, setActivePreviewImage] = useState<string | null>(
     null,
   );
 
-  const [isPublic, setIsPublic] = useState<boolean>(true);
-  const [slug, setSlug] = useState<string>(""); // --- SLUG STATE ---
+  const [visibility, setVisibility] = useState<"public" | "private">("public");
+  const [slug, setSlug] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [uploadStatus, setUploadStatus] = useState<string>("");
+
+  const [modalState, setModalState] = useState<{
+    isOpen: boolean;
+    type: "success" | "error";
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: "success",
+    title: "",
+    message: "",
+  });
 
   const [translations, setTranslations] = useState({
     uz: { title: "", content: "", banners: [] as BannerImage[] },
@@ -75,7 +96,6 @@ export default function CreateNewsPage() {
       [lang]: { ...prev[lang as keyof typeof prev], [field]: value },
     }));
 
-    // Agar o'zbekcha sarlavha o'zgarsa, avtomatik slug yaratadi
     if (lang === "uz" && field === "title") {
       setSlug(generateSlug(value));
     }
@@ -107,7 +127,9 @@ export default function CreateNewsPage() {
     e.stopPropagation();
     setTranslations((prev) => {
       const currentBanners = prev[activeLang as keyof typeof prev].banners;
-      URL.revokeObjectURL(currentBanners[indexToRemove].preview);
+      if (currentBanners[indexToRemove].preview) {
+        URL.revokeObjectURL(currentBanners[indexToRemove].preview);
+      }
 
       const filteredBanners = currentBanners.filter(
         (_, index) => index !== indexToRemove,
@@ -123,14 +145,110 @@ export default function CreateNewsPage() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Yuborishga tayyor malumotlar:", {
-      slug, // --- BAZAGA YUBORISH UCHUN SLUG ---
-      translations,
-      selectedGame,
-      isPublic,
-    });
+    setIsSubmitting(true);
+
+    try {
+      const finalTranslationsData: Record<string, any> = {};
+      const PUBLIC_R2_DOMAIN = process.env.NEXT_PUBLIC_R2_DOMAIN || "";
+      const baseUrl = PUBLIC_R2_DOMAIN.replace(/\/$/, "");
+
+      for (const lang of Object.keys(translations)) {
+        const langData = translations[lang as keyof typeof translations];
+        const bannerUrls: string[] = [];
+
+        for (const banner of langData.banners) {
+          if (banner.file) {
+            setUploadStatus(
+              `[${lang.toUpperCase()}] Rasm R2 xotirasiga yuklanmoqda...`,
+            );
+
+            const uploadResult = await handleGameUpload(banner.file);
+            if (!uploadResult.success || !uploadResult.fileKey) {
+              throw new Error(
+                `[${lang.toUpperCase()}] Rasmni R2 ga yuklashda xatolik yuz berdi!`,
+              );
+            }
+
+            bannerUrls.push(`${baseUrl}/${uploadResult.fileKey}`);
+          }
+        }
+
+        finalTranslationsData[lang] = {
+          title: langData.title,
+          content: langData.content,
+          banners: bannerUrls,
+        };
+      }
+
+      setUploadStatus("Ma'lumotlar saqlanmoqda...");
+
+      const baseTitle =
+        translations.uz.title || translations.en.title || "news";
+      const generatedSlug =
+        slug.trim() !== ""
+          ? slug
+          : baseTitle
+              .toLowerCase()
+              .trim()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/(^-|-$)+/g, "") +
+            "-" +
+            Date.now();
+
+      // ✨ BU YERDA authorId KERAK EMAS (Server Clerk orqali o'zi topadi)
+      const payload = {
+        slug: generatedSlug,
+        selectedGame: selectedGame || undefined,
+        visibility,
+        request: "requested",
+        translations: finalTranslationsData,
+      };
+
+      const response = await fetch("/api/news", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setModalState({
+          isOpen: true,
+          type: "success",
+          title: "Muvaffaqiyatli yuborildi!",
+          message:
+            "Yangilik muvaffaqiyatli bazaga saqlandi. Admin tasdiqlashini kuting.",
+        });
+      } else {
+        setModalState({
+          isOpen: true,
+          type: "error",
+          title: "Xatolik yuz berdi",
+          message: result.message || "Noma'lum xatolik yuz berdi.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Xatolik:", error);
+      setModalState({
+        isOpen: true,
+        type: "error",
+        title: "Server xatoligi",
+        message: error.message || "Serverga ulanishda xatolik yuz berdi.",
+      });
+    } finally {
+      setIsSubmitting(false);
+      setUploadStatus("");
+    }
+  };
+
+  const handleModalClose = () => {
+    const isSuccess = modalState.type === "success";
+    setModalState((prev) => ({ ...prev, isOpen: false }));
+    if (isSuccess) {
+      router.push("/developer/my-news");
+    }
   };
 
   const currentLangData = translations[activeLang as keyof typeof translations];
@@ -138,7 +256,7 @@ export default function CreateNewsPage() {
   return (
     <div className="w-full ml-5 max-w-5xl my-16 mx-auto p-4 md:p-0 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
       {/* HEADER */}
-      <div className="flex flex-col gap-1 animate-in duration-500 fill-mode-forwards delay-75">
+      <div className="flex flex-col gap-1">
         <div>
           <h1 className="text-3xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300">
             Yangi Yangilik Qoʻshish
@@ -150,8 +268,7 @@ export default function CreateNewsPage() {
       </div>
 
       {/* TILLAR VA STATUS SATRI */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full animate-in duration-500 fill-mode-forwards delay-100">
-        {/* TILLAR ROYXATI */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
         <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 dark:bg-white/5 rounded-2xl w-fit border border-slate-200/50 dark:border-white/5 overflow-x-auto max-w-full">
           {LANGUAGES.map((lang) => {
             const current =
@@ -180,7 +297,7 @@ export default function CreateNewsPage() {
                 />
                 {lang.label}
                 {hasImages && (
-                  <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-blue-500 text-white dark:bg-blue-600 rounded-md font-black animate-scale-in">
+                  <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-blue-500 text-white dark:bg-blue-600 rounded-md font-black">
                     {current.banners.length}
                   </span>
                 )}
@@ -189,14 +306,13 @@ export default function CreateNewsPage() {
           })}
         </div>
 
-        {/* PUBLIC / PRIVATE STATUS */}
         <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 dark:bg-white/5 rounded-2xl w-full sm:w-fit border border-slate-200/50 dark:border-white/5">
           <button
             type="button"
-            onClick={() => setIsPublic(true)}
+            onClick={() => setVisibility("public")}
             className={cn(
               "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 w-full sm:w-auto justify-center",
-              isPublic
+              visibility === "public"
                 ? "bg-white dark:bg-slate-950 text-emerald-600 dark:text-emerald-400 shadow-sm"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
             )}
@@ -206,10 +322,10 @@ export default function CreateNewsPage() {
           </button>
           <button
             type="button"
-            onClick={() => setIsPublic(false)}
+            onClick={() => setVisibility("private")}
             className={cn(
               "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 w-full sm:w-auto justify-center",
-              !isPublic
+              visibility === "private"
                 ? "bg-white dark:bg-slate-950 text-amber-600 dark:text-amber-400 shadow-sm"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
             )}
@@ -225,14 +341,12 @@ export default function CreateNewsPage() {
         onSubmit={handleSubmit}
         className="grid gap-6 lg:grid-cols-3 items-start"
       >
-        {/* KONTENT QISMI */}
-        <div className="lg:col-span-2 space-y-6 p-6 sm:p-8 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-100/50 dark:shadow-none  animate-in duration-500 fill-mode-forwards delay-150">
+        <div className="lg:col-span-2 space-y-6 p-6 sm:p-8 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-100/50 dark:shadow-none">
           <div className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-500/10 px-3 py-1.5 rounded-xl w-fit">
             Kiritilayotgan til:{" "}
             {LANGUAGES.find((l) => l.code === activeLang)?.label}
           </div>
 
-          {/* Sarlavha */}
           <div className="space-y-2.5">
             <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
               <Newspaper size={16} className="text-slate-400" /> Sarlavha
@@ -253,7 +367,6 @@ export default function CreateNewsPage() {
             />
           </div>
 
-          {/* URL Manzili (Slug) */}
           <div className="space-y-2.5">
             <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
               <LinkIcon size={16} className="text-slate-400" /> URL Manzili
@@ -273,7 +386,6 @@ export default function CreateNewsPage() {
             />
           </div>
 
-          {/* Matn */}
           <div className="space-y-2.5">
             <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
               Maqola batafsil matni
@@ -295,22 +407,20 @@ export default function CreateNewsPage() {
           </div>
         </div>
 
-        {/* SOZLAMALAR VA RASM YUKLASH */}
-        <div className="space-y-6  animate-in duration-500 fill-mode-forwards delay-200">
+        <div className="space-y-6">
           <div className="p-6 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-100/50 dark:shadow-none space-y-5">
-            {/* O'yin tanlash */}
             <div className="space-y-2.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                 <Layers size={14} className="text-slate-400" /> Tegishli Oʻyin
+                (Ixtiyoriy)
               </label>
               <select
-                required
                 value={selectedGame}
                 onChange={(e) => setSelectedGame(e.target.value)}
                 className="w-full px-4 py-3.5 rounded-xl border text-sm font-medium bg-slate-50/50 dark:bg-slate-900 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all duration-200"
               >
-                <option value="" disabled className="dark:bg-slate-900">
-                  Oyinni tanlang
+                <option value="" className="dark:bg-slate-900">
+                  Oyin tanlanmagan (Umumiy yangilik)
                 </option>
                 {myGames.map((game) => (
                   <option
@@ -324,7 +434,6 @@ export default function CreateNewsPage() {
               </select>
             </div>
 
-            {/* KO'P RASM YUKLASH */}
             <div className="space-y-2.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                 <ImageIcon size={14} className="text-slate-400" /> Muqova
@@ -353,18 +462,16 @@ export default function CreateNewsPage() {
                         alt={`Preview ${index}`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
-
-                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center  group-hover:opacity-100 transition-opacity pointer-events-none duration-200">
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:opacity-100 transition-opacity pointer-events-none duration-200">
                         <Maximize2
                           size={16}
-                          className="text-white drop-shadow-md scale-95 group-hover:scale-100 transition-transform duration-200"
+                          className="text-white drop-shadow-md"
                         />
                       </div>
-
                       <button
                         type="button"
                         onClick={(e) => removeFile(e, index)}
-                        className="absolute top-1.5 right-1.5 p-1.5 rounded-lg bg-black/70 text-white hover:bg-red-600 transition-all opacity-100 lg: lg:group-hover:opacity-100 z-10 duration-150"
+                        className="absolute top-1.5 right-1.5 p-1.5 rounded-lg bg-black/70 text-white hover:bg-red-600 transition-all z-10"
                       >
                         <X size={12} />
                       </button>
@@ -390,27 +497,75 @@ export default function CreateNewsPage() {
             </div>
           </div>
 
-          {/* TUGMA */}
           <button
             type="submit"
-            className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-sm tracking-wide text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/15 hover:shadow-blue-500/25 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
+            disabled={isSubmitting}
+            className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-sm tracking-wide text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/15 transition-all duration-200 disabled:opacity-50"
           >
-            <Send size={16} /> Yangilikni Chop Etish
+            <Send size={16} />
+            {isSubmitting
+              ? uploadStatus || "Yuborilmoqda..."
+              : "Yangilikni Yuborish"}
           </button>
         </div>
       </form>
+
+      {/* MODAL */}
+      {modalState.isOpen && (
+        <div className="fixed inset-0 bg-black/80 z-[110] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-4">
+              <div
+                className={cn(
+                  "p-3 rounded-2xl shrink-0",
+                  modalState.type === "success"
+                    ? "bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/20"
+                    : "bg-red-500/10 text-red-500 dark:bg-red-500/20",
+                )}
+              >
+                {modalState.type === "success" ? (
+                  <CheckCircle2 size={28} />
+                ) : (
+                  <AlertCircle size={28} />
+                )}
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {modalState.title}
+                </h3>
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  {modalState.message}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleModalClose}
+              className={cn(
+                "w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white shadow-md transition-all duration-200",
+                modalState.type === "success"
+                  ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20"
+                  : "bg-blue-600 hover:bg-blue-500 shadow-blue-500/20",
+              )}
+            >
+              Tushunarli / Davom etish
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* LIGHTBOX MODAL */}
       {activePreviewImage && (
         <div
           onClick={() => setActivePreviewImage(null)}
-          className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200 cursor-zoom-out"
+          className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-md cursor-zoom-out"
         >
           <div className="relative max-w-4xl max-h-[85vh] w-full h-full flex items-center justify-center select-none">
             <button
               type="button"
               onClick={() => setActivePreviewImage(null)}
-              className="absolute -top-12 right-0 p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all duration-150"
+              className="absolute -top-12 right-0 p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all"
             >
               <X size={20} />
             </button>
@@ -419,7 +574,7 @@ export default function CreateNewsPage() {
               src={activePreviewImage}
               alt="Kattalashtirilgan rasm"
               onClick={(e) => e.stopPropagation()}
-              className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl animate-in zoom-in-95 duration-200"
+              className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl"
             />
           </div>
         </div>

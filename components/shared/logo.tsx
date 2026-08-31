@@ -13,7 +13,7 @@ function Logo() {
           <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-full blur opacity-30 group-hover:opacity-60 transition duration-300"></div>
 
           <Image
-            src={"/MIDEM.jpg"}
+            src={"/MI.jpg"}
             alt="MIDEM"
             width={50}
             height={50}
@@ -34,11 +34,8 @@ function Logo() {
     /* Effekt: Faqat kompyuterda sichqoncha borganda sekin o'zgaradi */
     transition-all duration-300 group-hover:opacity-80 cursor-pointer"
             >
-              MIDEM
+              Midem
             </span>
-
-            {/* Nuqta: Telefonlarda qotmasligi uchun pulse o'rniga oddiy turgani ma'qul */}
-            <span className="h-1.5 w-1.5 rounded-full bg-blue-600 dark:bg-indigo-700 shadow-[0_0_8px_rgba(37,99,235,0.5)]"></span>
           </h1>
         </div>
       </Link>

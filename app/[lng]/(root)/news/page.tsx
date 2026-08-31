@@ -1,6 +1,5 @@
 "use client";
 
-// 1. IMPORTNI O'ZGARTIRDIK
 import { useTheme } from "@/components/ui/theme-provider";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -8,17 +7,60 @@ import MenuText from "@/components/menus/menu-text";
 import FillterCards from "@/components/fillters/fillter-cards";
 import Link from "next/link";
 import useTranslate from "@/hooks/use-translate";
+import Image from "next/image";
+
+interface NewsItem {
+  _id: string;
+  slug: string;
+  selectedGame?: string;
+  translations: {
+    [key: string]: {
+      title?: string;
+      description?: string;
+      banners?: string[];
+    };
+  };
+  createdAt: string;
+}
 
 function Page() {
-  // 2. resolvedTheme endi bizning xavfsiz providerdan keladi
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [news, setNews] = useState<NewsItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState("all");
   const t = useTranslate();
+
+  // Hozirgi tanlangan tilni aniqlash (hook qanday ishlashiga qarab moslaysiz, masalan 'uz')
+  // Agar useTranslate ichidan tilni olib bo'lmasa, localStorage yoki path'dan olinadi:
+  const currentLang = "uz";
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
+
+  // API dan yangiliklarni tortib kelish funksiyasi
+  useEffect(() => {
+    if (!mounted) return;
+
+    async function fetchNews() {
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/news/public?filter=${activeFilter}`);
+        const result = await res.json();
+        if (result.success) {
+          setNews(result.data);
+        }
+      } catch (error) {
+        console.error("Yangiliklarni yuklashda xatolik:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchNews();
+  }, [mounted, activeFilter]);
 
   if (!mounted) return null;
   const isDark = resolvedTheme === "dark";
@@ -51,103 +93,155 @@ function Page() {
           </p>
         </section>
 
-        <FillterCards
-          one={t("All")}
-          two={t("TheBestOnes")}
-          three={t("TheNewestOnes")}
-          four={t("TheOldestOnes")}
-          className="mb-5"
-        />
+        {/* Filter Kartochkalari (Bosilganda activeFilter o'zgaradi) */}
+        <div
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onClick={(e: any) => {
+            // FillterCards komponentingiz qanday ishlashiga qarab bu yerda klikni ushlashingiz mumkin
+            // Masalan, bosilgan tugma bo'yicha activeFilter ni 'all', 'best', 'newest', 'oldest' ga o'zgartirasiz
+          }}
+        >
+          <FillterCards
+            one={t("All")}
+            two={t("TheBestOnes")}
+            three={t("TheNewestOnes")}
+            four={t("TheOldestOnes")}
+            className="mb-5"
+          />
+        </div>
 
-        {/* NEWS GRID SECTION */}
-        <section className="w-full pb-20">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[1, 2, 3, 4, 5, 6].map((id) => (
-              <Link key={id} href={`/news/${id}`}>
-                <div
-                  className={cn(
-                    "group relative p-6 rounded-[2.5rem] border backdrop-blur-xl transition-all duration-500 hover:-translate-y-2",
-                    isDark
-                      ? "bg-white/[0.03] border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:shadow-blue-500/20"
-                      : "bg-white border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:shadow-blue-500/10",
-                  )}
-                >
-                  {/* Image Box */}
-                  <div
-                    className={cn(
-                      "w-full aspect-video rounded-3xl mb-6 overflow-hidden relative",
-                      isDark ? "bg-slate-800" : "bg-slate-200",
-                    )}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 group-hover:opacity-40 transition-opacity" />
+        {/* LOADING & EMPTY STATES */}
+        {loading ? (
+          <div className="py-20 text-center font-bold text-lg text-blue-500 animate-pulse">
+            Yuklanmoqda...
+          </div>
+        ) : news.length === 0 ? (
+          <div className="py-20 text-center text-slate-400 font-medium">
+            Hozircha tasdiqlangan yangiliklar mavjud emas.
+          </div>
+        ) : (
+          /* NEWS GRID SECTION */
+          <section className="w-full pb-20">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {news.map((item) => {
+                // Til bo'yicha tarjimani olish (agar tanlangan til bo'lmasa, uz yoki birinchi topilgan tilni oladi)
+                const translation =
+                  item.translations[currentLang] ||
+                  item.translations["uz"] ||
+                  Object.values(item.translations)[0] ||
+                  {};
 
-                    {/* Badge */}
-                    <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-blue-600 text-[10px] font-bold text-white uppercase tracking-widest">
-                      Yangilik
-                    </div>
-                  </div>
+                const title = translation.title || "Sarlavha yo'q";
+                const description =
+                  translation.description || "Matn mavjud emas...";
+                const bannerImg =
+                  translation.banners && translation.banners.length > 0
+                    ? translation.banners[0]
+                    : null;
 
-                  {/* Content */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <div className="h-1 w-8 bg-blue-500 rounded-full" />
-                      <span className="text-xs font-bold text-blue-500 uppercase tracking-tighter">
-                        Oyin Olami
-                      </span>
-                    </div>
+                const formattedDate = new Date(
+                  item.createdAt,
+                ).toLocaleDateString("uz-UZ", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                });
 
-                    <h3
-                      className={cn(
-                        "text-xl font-extrabold leading-tight line-clamp-2 transition-colors",
-                        isDark
-                          ? "group-hover:text-blue-400"
-                          : "group-hover:text-blue-600",
-                      )}
-                    >
-                      Yangi jang maydonlari va qahramonlar tizimidagi
-                      ozgarishlar elon qilindi
-                    </h3>
-
-                    <p
-                      className={cn(
-                        "text-sm line-clamp-2",
-                        isDark ? "text-slate-400" : "text-slate-500",
-                      )}
-                    >
-                      Ushbu yangilanishda biz foydalanuvchilarimiz uchun yanada
-                      qulay va qiziqarli interfeysni taqdim etamiz...
-                    </p>
-
+                return (
+                  <Link key={item._id} href={`/news/${item.slug}`}>
                     <div
                       className={cn(
-                        "flex justify-between items-center pt-4 border-t",
-                        isDark ? "border-white/5" : "border-slate-100",
+                        "group relative p-6 rounded-[2.5rem] border backdrop-blur-xl transition-all duration-500 hover:-translate-y-2",
+                        isDark
+                          ? "bg-white/[0.03] border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] hover:shadow-blue-500/20"
+                          : "bg-white border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:shadow-blue-500/10",
                       )}
                     >
-                      <span
+                      {/* Image Box */}
+                      <div
                         className={cn(
-                          "text-[10px] font-bold uppercase tracking-widest",
-                          isDark ? "text-slate-500" : "text-slate-400",
+                          "w-full aspect-video rounded-3xl mb-6 overflow-hidden relative",
+                          isDark ? "bg-slate-800" : "bg-slate-200",
                         )}
                       >
-                        20 May, 2026
-                      </span>
+                        {bannerImg ? (
+                          <Image
+                            src={bannerImg}
+                            alt={title}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 group-hover:opacity-40 transition-opacity" />
+                        )}
 
-                      <span
-                        className={cn(
-                          "text-xs font-black uppercase tracking-widest transition-all",
-                          "text-blue-600 hover:text-blue-500 underline underline-offset-4",
-                        )}
-                      >
-                        Oqish
-                      </span>
+                        {/* Badge */}
+                        <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-blue-600 text-[10px] font-bold text-white uppercase tracking-widest">
+                          Yangilik
+                        </div>
+                      </div>
+
+                      {/* Content */}
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-1 w-8 bg-blue-500 rounded-full" />
+                          <span className="text-xs font-bold text-blue-500 uppercase tracking-tighter">
+                            {item.selectedGame || "Oyin Olami"}
+                          </span>
+                        </div>
+
+                        <h3
+                          className={cn(
+                            "text-xl font-extrabold leading-tight line-clamp-2 transition-colors",
+                            isDark
+                              ? "group-hover:text-blue-400"
+                              : "group-hover:text-blue-600",
+                          )}
+                        >
+                          {title}
+                        </h3>
+
+                        <p
+                          className={cn(
+                            "text-sm line-clamp-2",
+                            isDark ? "text-slate-400" : "text-slate-500",
+                          )}
+                        >
+                          {description}
+                        </p>
+
+                        <div
+                          className={cn(
+                            "flex justify-between items-center pt-4 border-t",
+                            isDark ? "border-white/5" : "border-slate-100",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "text-[10px] font-bold uppercase tracking-widest",
+                              isDark ? "text-slate-500" : "text-slate-400",
+                            )}
+                          >
+                            {formattedDate}
+                          </span>
+
+                          <span
+                            className={cn(
+                              "text-xs font-black uppercase tracking-widest transition-all",
+                              "text-blue-600 hover:text-blue-500 underline underline-offset-4",
+                            )}
+                          >
+                            Oqish
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* Background Decor (Glow) */}

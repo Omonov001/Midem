@@ -1,7 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { handleGameUpdate } from "@/lib/update";
+import {
+  LanguageType,
+  PlatformType,
+  ILangSpecificData,
+  ITechnicalDetails,
+  IOSRequirement,
+  IOSDetail,
+} from "@/models/game.model";
 import {
   IoEyeOutline,
   IoEyeOffOutline,
@@ -14,76 +25,149 @@ import {
   IoTerminal,
   IoFolderOpenOutline,
   IoCloudUploadOutline,
+  IoSaveOutline,
+  IoCheckmarkCircleOutline,
+  IoAlertCircleOutline,
+  IoCloseOutline,
 } from "react-icons/io5";
 
-// CRITICAL: index.ts faylingiz qayerda joylashgan bolsa, yolini togri korsating.
-// Masalan, agar u src/constants/index.ts da bolsa: "@/constants" deb yozing.
-import {
-  MOCK_GAMES,
-  type LanguageType,
-  type PlatformType,
-  type OSRequirement,
-  type OSDetail,
-  type LangSpecificData,
-} from "@/constants";
+export default function EditGameForm({ gameSlug }: { gameSlug: string }) {
+  const router = useRouter();
 
-interface EditGameFormProps {
-  gameSlug: string;
-}
+  // Statelar
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-export default function EditGameForm({ gameSlug }: EditGameFormProps) {
-  const isDark = true;
+  // 🚀 Tanlangan fayllarni R2 ga yubormay vaqtincha saqlab turish uchun state
+  const [pendingOSFiles, setPendingOSFiles] = useState<Record<string, File>>(
+    {},
+  );
 
-  // Malumot xavfsiz yuklanishi uchun zaxira (fallback) obekt bilan taminlaymiz
-  const gameTarget = MOCK_GAMES?.find((game) => game.slug === gameSlug) || {
-    id: "",
-    slug: "",
-    visibility: "private" as const,
-    platform: "pc" as const,
-    selectedOS: {},
-    osDetails: {},
-    priceType: "free" as const,
-    price: "",
-    whatsNew: [""],
-    langData: {} as Record<LanguageType, LangSpecificData>,
+  // Custom Modal State
+  const [modal, setModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    type: "success" | "error" | "info";
+    onConfirm?: () => void;
+  }>({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "info",
+  });
+
+  const showModal = (
+    title: string,
+    message: string,
+    type: "success" | "error" | "info" = "info",
+    onConfirm?: () => void,
+  ) => {
+    setModal({ isOpen: true, title, message, type, onConfirm });
   };
 
-  // --- STATELAR ---
-  const [activeLang, setActiveLang] = useState<LanguageType>("uz");
-  const [visibility, setVisibility] = useState<"public" | "private">(
-    gameTarget.visibility,
-  );
-  const [slug, setSlug] = useState<string>(gameTarget.slug);
-  const [platform, setPlatform] = useState<PlatformType>(gameTarget.platform);
-  const [selectedOS, setSelectedOS] = useState<Record<string, boolean>>(
-    gameTarget.selectedOS || {},
-  );
-  const [osDetails, setOsDetails] = useState<Record<string, OSDetail>>(
-    gameTarget.osDetails || {},
-  );
-  const [priceType, setPriceType] = useState<"free" | "paid">(
-    gameTarget.priceType,
-  );
-  const [price, setPrice] = useState<string>(gameTarget.price);
-  const [whatsNew, setWhatsNew] = useState<string[]>(
-    gameTarget.whatsNew || [""],
-  );
-  const [langData, setLangData] = useState<
-    Record<LanguageType, LangSpecificData>
-  >(gameTarget.langData);
+  const closeModal = () => {
+    setModal((prev) => ({ ...prev, isOpen: false }));
+  };
 
-  // --- HANDLERS ---
+  // Game statelari
+  const [gameId, setGameId] = useState<string>("");
+  const [activeLang, setActiveLang] = useState<LanguageType>("uz");
+  const [visibility, setVisibility] = useState<"public" | "private">("private");
+  const [slug, setSlug] = useState<string>("");
+  const [platform, setPlatform] = useState<PlatformType>("pc");
+  const [selectedOS, setSelectedOS] = useState<Record<string, boolean>>({});
+  const [osDetails, setOsDetails] = useState<Record<string, IOSDetail>>({});
+  const [priceType, setPriceType] = useState<"free" | "paid">("free");
+  const [price, setPrice] = useState<string>("0$");
+
+  const [techData, setTechData] = useState<ITechnicalDetails>({
+    version: "",
+    downloadSize: "",
+    inGameSize: "",
+    developer: "",
+    releaseDate: "",
+  });
+
+  const [langData, setLangData] = useState<
+    Record<LanguageType, ILangSpecificData>
+  >({
+    uz: { whatsNew: [""] },
+    ru: { whatsNew: [""] },
+    en: { whatsNew: [""] },
+    tr: { whatsNew: [""] },
+  });
+
+  // --- BAZADAN MALUMOT OLISH ---
+  useEffect(() => {
+    async function fetchGameData() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await fetch(`/api/games/${gameSlug}`);
+        if (!res.ok)
+          throw new Error("Oyin malumotlarini bazadan yuklashda xatolik!");
+
+        const data = await res.json();
+
+        setGameId(data._id || "");
+        setSlug(data.slug || gameSlug);
+        setVisibility(data.visibility || "private");
+        setPlatform(data.platform || "pc");
+        setSelectedOS(data.selectedOS || {});
+        setOsDetails(data.osDetails || {});
+        setPriceType(data.priceType || "free");
+        setPrice(data.price || "0$");
+        setTechData(
+          data.techData || {
+            version: "",
+            downloadSize: "",
+            inGameSize: "",
+            developer: "",
+            releaseDate: "",
+          },
+        );
+
+        setLangData({
+          uz: { whatsNew: [""], ...data.langData?.uz },
+          ru: { whatsNew: [""], ...data.langData?.ru },
+          en: { whatsNew: [""], ...data.langData?.en },
+          tr: { whatsNew: [""], ...data.langData?.tr },
+        });
+      } catch (err: any) {
+        setError(err.message || "Xatolik yuz berdi");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (gameSlug) fetchGameData();
+  }, [gameSlug]);
+
+  // 🚀 FAYL TANLANGANDA: R2 GA YUBORILMAYDI, FAQAT STATEGA SAQLANADI
+  const handleFolderFileChange = (
+    os: string,
+    e: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setPendingOSFiles((prev) => ({
+      ...prev,
+      [os]: file,
+    }));
+  };
+
   const handleTextChange = (
     lang: LanguageType,
-    field: keyof LangSpecificData,
+    field: keyof ILangSpecificData,
     value: string,
   ) => {
     setLangData((prev) => ({
       ...prev,
-      [lang]: {
-        ...prev[lang],
-        [field]: value,
-      },
+      [lang]: { ...prev[lang], [field]: value },
     }));
 
     if (lang === "uz" && field === "title") {
@@ -95,13 +179,58 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
     }
   };
 
+  const handleTechChange = (field: keyof ITechnicalDetails, value: string) => {
+    setTechData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleAddWhatsNew = (lang: LanguageType) => {
+    setLangData((prev) => ({
+      ...prev,
+      [lang]: {
+        ...prev[lang],
+        whatsNew: [...(prev[lang]?.whatsNew || []), ""],
+      },
+    }));
+  };
+
+  const handleWhatsNewChange = (
+    lang: LanguageType,
+    index: number,
+    value: string,
+  ) => {
+    const currentList = [...(langData[lang]?.whatsNew || [""])];
+    currentList[index] = value;
+
+    setLangData((prev) => ({
+      ...prev,
+      [lang]: {
+        ...prev[lang],
+        whatsNew: currentList,
+      },
+    }));
+  };
+
+  const handleRemoveWhatsNew = (lang: LanguageType, index: number) => {
+    const currentList = (langData[lang]?.whatsNew || []).filter(
+      (_, i) => i !== index,
+    );
+
+    setLangData((prev) => ({
+      ...prev,
+      [lang]: {
+        ...prev[lang],
+        whatsNew: currentList.length ? currentList : [""],
+      },
+    }));
+  };
+
   const toggleOS = (os: string) => {
     setSelectedOS((prev) => ({ ...prev, [os]: !prev[os] }));
   };
 
   const handleOSRequirementFieldChange = (
     os: string,
-    field: keyof OSRequirement,
+    field: keyof IOSRequirement,
     value: string,
   ) => {
     setOsDetails((prev) => {
@@ -113,35 +242,10 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
         ...prev,
         [os]: {
           ...currentOS,
-          requirements: {
-            ...currentOS.requirements,
-            [field]: value,
-          },
+          requirements: { ...currentOS.requirements, [field]: value },
         },
       };
     });
-  };
-
-  const handleFolderFileChange = (
-    os: string,
-    e: ChangeEvent<HTMLInputElement>,
-  ) => {
-    if (e.target.files && e.target.files[0]) {
-      const fileName = e.target.files[0].name;
-      setOsDetails((prev) => {
-        const currentOS = prev[os] || {
-          requirements: { os: "", cpu: "", gpu: "", ram: "" },
-          fileName: "",
-        };
-        return {
-          ...prev,
-          [os]: {
-            ...currentOS,
-            fileName,
-          },
-        };
-      });
-    }
   };
 
   const handleIconChange = (
@@ -190,29 +294,68 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
     }));
   };
 
-  const handleAddWhatsNew = () => setWhatsNew((prev) => [...prev, ""]);
-  const handleWhatsNewChange = (index: number, value: string) => {
-    const updated = [...whatsNew];
-    updated[index] = value;
-    setWhatsNew(updated);
-  };
-  const handleRemoveWhatsNew = (index: number) =>
-    setWhatsNew((prev) => prev.filter((_, i) => i !== index));
-
-  const handleSubmit = (e: React.FormEvent) => {
+  // 🚀 SAQLASH TUGMASI BOSILGANDA (Hamma ish shu yerda bajariladi)
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    console.log("Payload:", {
-      id: gameTarget.id,
-      slug,
-      visibility,
-      platform,
-      selectedOS,
-      osDetails,
-      priceType,
-      price,
-      whatsNew,
-      langData,
-    });
+    setIsSubmitting(true);
+
+    try {
+      const updatedOsDetails = { ...osDetails };
+
+      // 1. Yangi tanlangan fayllar bolsa, Ularni R2 ga yuklaymiz
+      for (const os of Object.keys(pendingOSFiles)) {
+        const file = pendingOSFiles[os];
+        if (file) {
+          const oldKey = updatedOsDetails[os]?.fileName || "";
+          const result = await handleGameUpdate(file, oldKey);
+
+          if (result.success && result.newFileKey) {
+            updatedOsDetails[os] = {
+              ...updatedOsDetails[os],
+              fileName: result.newFileKey,
+            };
+          } else {
+            throw new Error(
+              `${os.toUpperCase()} faylini R2 ga yuklashda xatolik yuz berdi.`,
+            );
+          }
+        }
+      }
+
+      // 2. Bazaga (MongoDB / API) malumotlarni yuboramiz
+      const payload = {
+        slug,
+        visibility,
+        platform,
+        selectedOS,
+        osDetails: updatedOsDetails,
+        priceType,
+        price: priceType === "paid" ? price : "0$",
+        techData,
+        langData,
+        request: "requested",
+      };
+
+      const res = await fetch(`/api/games/${gameSlug}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Saqlashda xatolik yuz berdi");
+
+      // 3. Muvaffaqiyatli xabari va redirect
+      showModal(
+        "Muvaffaqiyatli!",
+        "Oyin malumotlari saqlandi va fayllar yangilandi. Oyinlarim sahifasiga otasiz.",
+        "success",
+        () => router.push("/developer/my-games"),
+      );
+    } catch (err: any) {
+      showModal("Xatolik!", err.message || "Xatolik yuz berdi", "error");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const blockClass =
@@ -220,49 +363,144 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
   const inputClass =
     "w-full px-4 py-3 rounded-xl border border-white/10 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder-slate-500 transition-all";
 
+  if (loading) {
+    return (
+      <div className="min-h-screen pt-24 pb-20 flex items-center justify-center bg-slate-950 text-white">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-sm font-black uppercase italic opacity-60">
+            Bazadan malumotlar yuklanmoqda...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen pt-24 pb-20 flex items-center justify-center bg-slate-950 text-red-500">
+        <div className="text-center space-y-3">
+          <p className="text-lg font-bold">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase"
+          >
+            Qayta urinish
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <main
-      className={cn(
-        "relative min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 bg-slate-950 text-slate-300",
+    <main className="relative min-h-screen pt-24 pb-20 px-4 sm:px-6 lg:px-8 bg-slate-950 text-slate-300">
+      {/* CUSTOM DIALOG MODAL (z-[9999]) */}
+      {modal.isOpen && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md p-6 rounded-3xl border border-white/10 bg-slate-900 shadow-2xl space-y-5">
+            <button
+              onClick={closeModal}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white rounded-full hover:bg-white/5 transition-colors"
+            >
+              <IoCloseOutline size={20} />
+            </button>
+
+            <div className="flex items-center gap-4">
+              <div
+                className={cn(
+                  "p-3 rounded-2xl flex items-center justify-center shrink-0",
+                  modal.type === "success"
+                    ? "bg-emerald-500/10 text-emerald-500 border border-emerald-500/20"
+                    : modal.type === "error"
+                      ? "bg-red-500/10 text-red-500 border border-red-500/20"
+                      : "bg-blue-500/10 text-blue-500 border border-blue-500/20",
+                )}
+              >
+                {modal.type === "success" ? (
+                  <IoCheckmarkCircleOutline size={32} />
+                ) : (
+                  <IoAlertCircleOutline size={32} />
+                )}
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-black uppercase italic text-white tracking-wide">
+                  {modal.title}
+                </h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  {modal.message}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  if (modal.onConfirm) modal.onConfirm();
+                  closeModal();
+                }}
+                className={cn(
+                  "w-full py-3 rounded-xl font-black uppercase italic text-xs tracking-wider transition-all active:scale-95 shadow-md",
+                  modal.type === "error"
+                    ? "bg-red-600 hover:bg-red-500 text-white"
+                    : "bg-blue-600 hover:bg-blue-500 text-white",
+                )}
+              >
+                Tushunarli
+              </button>
+            </div>
+          </div>
+        </div>
       )}
-    >
+
       <div className="max-w-5xl mx-auto space-y-8">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-4 border-b border-dashed border-white/10">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-4 border-b border-dashed border-white/10">
           <div className="space-y-1">
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black uppercase tracking-tighter italic text-white">
-              OYINNI <span className="text-blue-500">TAHRIRLASH</span>
+              O&apos;YINNI <span className="text-blue-500">TAHRIRLASH</span>
             </h1>
             <p className="text-xs sm:text-sm opacity-60 italic">
-              ID: {gameTarget.id || "Nomalum"} — Oyin malumotlari muvaffaqiyatli
-              boglandi.
+              ID: {gameId || "Nomalum"}
             </p>
           </div>
 
-          <div className="flex bg-slate-900 p-1 rounded-xl w-full sm:w-fit">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex bg-slate-900 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setVisibility("public")}
+                className={cn(
+                  "flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase italic transition-all",
+                  visibility === "public"
+                    ? "bg-blue-600 text-white shadow-md"
+                    : "opacity-60",
+                )}
+              >
+                <IoEyeOutline size={16} /> Public
+              </button>
+              <button
+                type="button"
+                onClick={() => setVisibility("private")}
+                className={cn(
+                  "flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-xs font-black uppercase italic transition-all",
+                  visibility === "private"
+                    ? "bg-red-600 text-white shadow-md"
+                    : "opacity-60",
+                )}
+              >
+                <IoEyeOffOutline size={16} /> Private
+              </button>
+            </div>
+
             <button
               type="button"
-              onClick={() => setVisibility("public")}
-              className={cn(
-                "flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-black uppercase italic transition-all",
-                visibility === "public"
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "opacity-60",
-              )}
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl font-black uppercase italic text-xs tracking-wider transition-all shadow-lg flex items-center gap-2"
             >
-              <IoEyeOutline size={16} /> Public
-            </button>
-            <button
-              type="button"
-              onClick={() => setVisibility("private")}
-              className={cn(
-                "flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg text-xs font-black uppercase italic transition-all",
-                visibility === "private"
-                  ? "bg-red-600 text-white shadow-md"
-                  : "opacity-60",
-              )}
-            >
-              <IoEyeOffOutline size={16} /> Private
+              <IoSaveOutline size={16} />
+              {isSubmitting ? "Saqlanmoqda..." : "Saqlash"}
             </button>
           </div>
         </div>
@@ -301,7 +539,7 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
                 activeLang === lang ? "block" : "hidden",
               )}
             >
-              {/* Inputs Group */}
+              {/* Matnlar va Tavsif */}
               <div className={blockClass}>
                 <h3 className="text-sm font-black uppercase italic text-blue-500 border-b border-white/10 pb-2 tracking-wider">
                   Matnlar va Tavsif ({lang.toUpperCase()})
@@ -309,7 +547,7 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-black uppercase opacity-60 italic">
-                      Oyin nomi
+                      O&apos;yin nomi
                     </label>
                     <input
                       value={langData[lang]?.title || ""}
@@ -350,6 +588,34 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
                       className={inputClass}
                     />
                   </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-black uppercase opacity-60 italic">
+                      Kategoriya
+                    </label>
+                    <input
+                      value={langData[lang]?.category || ""}
+                      onChange={(e) =>
+                        handleTextChange(lang, "category", e.target.value)
+                      }
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="text-[11px] font-black uppercase opacity-60 italic">
+                      Mavjud tillar soni/matni
+                    </label>
+                    <input
+                      value={langData[lang]?.availableLanguagesCount || ""}
+                      onChange={(e) =>
+                        handleTextChange(
+                          lang,
+                          "availableLanguagesCount",
+                          e.target.value,
+                        )
+                      }
+                      className={inputClass}
+                    />
+                  </div>
                   <div className="space-y-1.5 sm:col-span-2">
                     <label className="text-[11px] font-black uppercase opacity-60 italic">
                       Asosiy Tavsif
@@ -363,14 +629,13 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
                           e.target.value,
                         )
                       }
-                      rows={4}
+                      rows={3}
                       className={cn(inputClass, "resize-none")}
-                      required={activeLang === lang}
                     />
                   </div>
                   <div className="space-y-1.5 sm:col-span-2">
                     <label className="text-[11px] font-black uppercase opacity-60 italic">
-                      Toliq Tavsif
+                      To&apos;liq Tavsif
                     </label>
                     <textarea
                       value={langData[lang]?.description || ""}
@@ -379,117 +644,12 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
                       }
                       rows={4}
                       className={cn(inputClass, "resize-none")}
-                      required={activeLang === lang}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Technical Specifications */}
-              <div className={blockClass}>
-                <h3 className="text-sm font-black uppercase italic text-blue-500 border-b border-white/10 pb-2 tracking-wider">
-                  Texnik Malumotlar ({lang.toUpperCase()})
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-black uppercase opacity-60 italic">
-                      Kategoriya
-                    </label>
-                    <input
-                      required={activeLang === lang}
-                      value={langData[lang]?.category || ""}
-                      onChange={(e) =>
-                        handleTextChange(lang, "category", e.target.value)
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-black uppercase opacity-60 italic">
-                      Ishlab chiquvchi
-                    </label>
-                    <input
-                      required={activeLang === lang}
-                      value={langData[lang]?.developer || ""}
-                      onChange={(e) =>
-                        handleTextChange(lang, "developer", e.target.value)
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-black uppercase opacity-60 italic">
-                      Versiya
-                    </label>
-                    <input
-                      required={activeLang === lang}
-                      value={langData[lang]?.version || ""}
-                      onChange={(e) =>
-                        handleTextChange(lang, "version", e.target.value)
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-black uppercase opacity-60 italic">
-                      Yuklash hajmi
-                    </label>
-                    <input
-                      required={activeLang === lang}
-                      value={langData[lang]?.downloadSize || ""}
-                      onChange={(e) =>
-                        handleTextChange(lang, "downloadSize", e.target.value)
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-black uppercase opacity-60 italic">
-                      Oyin ichidagi xotira
-                    </label>
-                    <input
-                      required={activeLang === lang}
-                      value={langData[lang]?.inGameSize || ""}
-                      onChange={(e) =>
-                        handleTextChange(lang, "inGameSize", e.target.value)
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-black uppercase opacity-60 italic">
-                      Chiqarilgan sana
-                    </label>
-                    <input
-                      required={activeLang === lang}
-                      value={langData[lang]?.releaseDate || ""}
-                      onChange={(e) =>
-                        handleTextChange(lang, "releaseDate", e.target.value)
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className="space-y-1.5 sm:col-span-2 lg:col-span-3">
-                    <label className="text-[11px] font-black uppercase opacity-60 italic">
-                      Mavjud tillar matni
-                    </label>
-                    <input
-                      required={activeLang === lang}
-                      value={langData[lang]?.availableLanguagesCount || ""}
-                      onChange={(e) =>
-                        handleTextChange(
-                          lang,
-                          "availableLanguagesCount",
-                          e.target.value,
-                        )
-                      }
-                      className={inputClass}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Media Section */}
+              {/* Media */}
               <div className={blockClass}>
                 <h3 className="text-sm font-black uppercase italic text-blue-500 border-b border-white/10 pb-2 tracking-wider">
                   Media yuklamalar ({lang.toUpperCase()})
@@ -531,7 +691,7 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
                       <div className="relative aspect-[16/10] rounded-xl border-2 border-dashed border-white/10 bg-slate-900 flex flex-col items-center justify-center overflow-hidden cursor-pointer min-h-[90px]">
                         <IoAddCircleOutline size={24} className="opacity-40" />
                         <span className="text-[9px] font-black opacity-50 uppercase mt-0.5">
-                          Qoshish
+                          Qo&apos;shish
                         </span>
                         <input
                           type="file"
@@ -567,7 +727,74 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
             </div>
           ))}
 
-          {/* System Requirements (OS) */}
+          {/* Technical Details */}
+          <div className={blockClass}>
+            <h3 className="text-sm font-black uppercase italic text-blue-500 border-b border-white/10 pb-2 tracking-wider">
+              Texnik Ma&apos;lumotlar (techData)
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase opacity-60 italic">
+                  Ishlab Chiquvchi
+                </label>
+                <input
+                  value={techData.developer || ""}
+                  onChange={(e) =>
+                    handleTechChange("developer", e.target.value)
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase opacity-60 italic">
+                  Versiya
+                </label>
+                <input
+                  value={techData.version || ""}
+                  onChange={(e) => handleTechChange("version", e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase opacity-60 italic">
+                  Chiqarilgan Sana
+                </label>
+                <input
+                  value={techData.releaseDate || ""}
+                  onChange={(e) =>
+                    handleTechChange("releaseDate", e.target.value)
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase opacity-60 italic">
+                  Yuklash Hajmi
+                </label>
+                <input
+                  value={techData.downloadSize || ""}
+                  onChange={(e) =>
+                    handleTechChange("downloadSize", e.target.value)
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-black uppercase opacity-60 italic">
+                  O&apos;yin ichidagi xotira
+                </label>
+                <input
+                  value={techData.inGameSize || ""}
+                  onChange={(e) =>
+                    handleTechChange("inGameSize", e.target.value)
+                  }
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* System Requirements & R2 File Select */}
           <div className={blockClass}>
             <h3 className="text-sm font-black uppercase italic text-blue-500 border-b border-white/10 pb-2 tracking-wider">
               Platforma & Tizim Talablari
@@ -689,16 +916,15 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
                               {field}
                             </label>
                             <input
-                              required
                               value={
                                 osDetails[os]?.requirements?.[
-                                  field as keyof OSRequirement
+                                  field as keyof IOSRequirement
                                 ] || ""
                               }
                               onChange={(e) =>
                                 handleOSRequirementFieldChange(
                                   os,
-                                  field as keyof OSRequirement,
+                                  field as keyof IOSRequirement,
                                   e.target.value,
                                 )
                               }
@@ -709,15 +935,21 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-3 border-t border-dashed border-white/5">
                         <label className="flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-bold text-xs uppercase italic cursor-pointer transition-colors shadow-sm w-full sm:w-fit">
-                          <IoFolderOpenOutline size={14} /> Buildni yangilash
+                          <IoFolderOpenOutline size={14} /> Fayl tanlash
                           <input
                             type="file"
                             onChange={(e) => handleFolderFileChange(os, e)}
                             className="hidden"
                           />
                         </label>
-                        <span className="text-xs font-bold opacity-60 truncate max-w-xs">
-                          {osDetails[os]?.fileName || "Eski fayl saqlangan."}
+                        <span className="text-xs font-bold font-mono opacity-80 truncate max-w-xs">
+                          {pendingOSFiles[os] ? (
+                            <span className="text-emerald-400">
+                              Yangi fayl tanlandi: {pendingOSFiles[os].name}
+                            </span>
+                          ) : (
+                            osDetails[os]?.fileName || "Fayl biriktirilmagan"
+                          )}
                         </span>
                       </div>
                     </div>
@@ -726,7 +958,7 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
             </div>
           </div>
 
-          {/* Monetization */}
+          {/* Monetizatsiya */}
           <div className={blockClass}>
             <h3 className="text-sm font-black uppercase italic text-blue-500 border-b border-white/10 pb-2 tracking-wider">
               Monetizatsiya
@@ -734,7 +966,7 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
             <div className="flex flex-col sm:flex-row sm:items-end gap-5">
               <div className="space-y-2 flex-1">
                 <label className="text-[11px] font-black uppercase opacity-60 italic block">
-                  Oyin turi
+                  O&apos;yin turi
                 </label>
                 <div className="flex bg-slate-900 p-1 rounded-xl w-full sm:w-fit">
                   <button
@@ -766,10 +998,9 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
               {priceType === "paid" && (
                 <div className="space-y-1.5 flex-1 w-full">
                   <label className="text-[11px] font-black uppercase opacity-60 italic">
-                    Narxi
+                    Narxi ($)
                   </label>
                   <input
-                    required
                     type="text"
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
@@ -780,36 +1011,36 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
             </div>
           </div>
 
-          {/* Changelog */}
+          {/* YANGILIKLAR ROYXATI */}
           <div className={blockClass}>
             <div className="flex justify-between items-center border-b border-white/10 pb-2">
               <h3 className="text-sm font-black uppercase italic text-blue-500 tracking-wider">
-                Yangiliklar Royxati
+                Yangiliklar Ro&apos;yxati ({activeLang.toUpperCase()})
               </h3>
               <button
                 type="button"
-                onClick={handleAddWhatsNew}
+                onClick={() => handleAddWhatsNew(activeLang)}
                 className="text-blue-500 hover:text-blue-400 flex items-center gap-1 text-xs font-black uppercase italic"
               >
-                <IoAddCircleOutline size={16} /> Qoshish
+                <IoAddCircleOutline size={16} /> Qo&apos;shish
               </button>
             </div>
             <div className="space-y-3">
-              {whatsNew.map((item, index) => (
+              {(langData[activeLang]?.whatsNew || [""]).map((item, index) => (
                 <div key={index} className="flex gap-2 items-center">
                   <input
                     value={item}
-                    required
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                      handleWhatsNewChange(index, e.target.value)
+                    onChange={(e) =>
+                      handleWhatsNewChange(activeLang, index, e.target.value)
                     }
+                    placeholder="Masalan: Versiya 1.2 xatolar tuzatildi..."
                     className={inputClass}
                   />
-                  {whatsNew.length > 1 && (
+                  {(langData[activeLang]?.whatsNew || []).length > 1 && (
                     <button
                       type="button"
-                      onClick={() => removeScreenshot(activeLang, index)}
-                      className="p-3.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20"
+                      onClick={() => handleRemoveWhatsNew(activeLang, index)}
+                      className="p-3.5 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors"
                     >
                       <IoTrashOutline size={18} />
                     </button>
@@ -819,13 +1050,15 @@ export default function EditGameForm({ gameSlug }: EditGameFormProps) {
             </div>
           </div>
 
-          {/* Submit */}
-          <button
+          {/* PASTKI SAQLASH TUGMASI */}
+          {/* <button
             type="submit"
-            className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-black uppercase italic tracking-wider transition-all active:scale-[0.99] flex items-center justify-center gap-2 shadow-lg"
+            disabled={isSubmitting}
+            className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl font-black uppercase italic tracking-wider transition-all active:scale-[0.99] flex items-center justify-center gap-2 shadow-lg"
           >
-            <IoCloudUploadOutline size={20} /> Ozgarishlarni Saqlash
-          </button>
+            <IoCloudUploadOutline size={20} />
+            {isSubmitting ? "Saqlanmoqda..." : "Ozgarishlarni Saqlash"}
+          </button> */}
         </form>
       </div>
     </main>

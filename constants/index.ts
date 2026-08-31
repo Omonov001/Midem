@@ -130,6 +130,21 @@ export const adminMenuItems = [
     href: "/admin/userRequests",
     icon: React.createElement(User, { size: 22 }),
   },
+  {
+    label: "games",
+    href: "/admin/games",
+    icon: React.createElement(CgGames, { size: 22 }),
+  },
+  {
+    label: "news",
+    href: "/admin/news",
+    icon: React.createElement(ListVideo, { size: 22 }),
+  },
+  {
+    label: "notifications",
+    href: "/admin/notifications",
+    icon: React.createElement(BiNotification, { size: 22 }),
+  },
 ];
 
 // 1. Tiplarni aniqlab olamiz
@@ -161,6 +176,8 @@ export interface OSRequirement {
 }
 
 export interface OSDetail {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [x: string]: any;
   requirements: OSRequirement;
   fileName: string;
 }

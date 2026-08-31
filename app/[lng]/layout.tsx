@@ -1,11 +1,13 @@
-import { ClerkProvider } from "@clerk/nextjs";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import { ThemeProvider } from "@/components/ui/theme-provider";
+import ClerkThemeProvider from "@/components/settings/clerk-theme-provider";
+import UserHeartbeat from "@/components/settings/user-heartbeat";
 import "./globals.css";
 import ScrollToTop from "@/components/settings/scroll-totop";
+import { ClerkProvider } from "@clerk/nextjs";
 
 interface Props {
   children: React.ReactNode;
@@ -15,28 +17,29 @@ interface Props {
 export default async function RootLayout({ children, params }: Props) {
   const { lng } = await params;
 
-  // 1. Agar til ruxsat berilganlar orasida bo'lmasa 404
   if (!routing.locales.includes(lng as (typeof routing.locales)[number])) {
     notFound();
   }
 
-  // 2. Serverdan tarjimalarni yuklab olamiz
   const messages = await getMessages();
 
   return (
-    <ClerkProvider>
-      <html lang={lng} suppressHydrationWarning>
-        <body className="custom-scrollbar overflow-x-hidden antialiased transition-colors duration-300">
+    <html lang={lng} suppressHydrationWarning>
+      <body className="custom-scrollbar overflow-x-hidden antialiased transition-colors duration-300">
+        <ClerkProvider>
           <NextIntlClientProvider messages={messages} locale={lng}>
             <ThemeProvider>
-              <div className="min-h-screen text-foreground">
-                <ScrollToTop />
-                {children}
-              </div>
+              <ClerkThemeProvider>
+                <div className="min-h-screen text-foreground">
+                  <ScrollToTop />
+                  <UserHeartbeat />
+                  {children}
+                </div>
+              </ClerkThemeProvider>
             </ThemeProvider>
           </NextIntlClientProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

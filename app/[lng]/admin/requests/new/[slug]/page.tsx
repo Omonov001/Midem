@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
@@ -12,6 +13,7 @@ import {
   X,
   Sparkles,
   AlertTriangle,
+  Loader2,
 } from "lucide-react";
 
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -21,15 +23,13 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
-import { NewsItem, MOCK_NEWS } from "@/constants/index";
-
 import NotificationModal, {
   NotificationPayload,
   MultiLangContent,
   Language,
 } from "@/components/modals/notification-modal";
 
-type AllowedLangs = "uz" | "ru" | "en" | "tr";
+type AllowedLangs = "uz" | "ru" | "en" | "tu";
 
 export default function NewsDetailRequest() {
   const params = useParams();
@@ -37,9 +37,37 @@ export default function NewsDetailRequest() {
 
   const slugParam = params?.slug;
   const slug = Array.isArray(slugParam) ? slugParam[0] : slugParam || "";
-  const [activeLang, setActiveLang] = useState<AllowedLangs>("uz");
 
-  // --- 1-BOSQICH: Confirm Modal State ---
+  const [activeLang, setActiveLang] = useState<AllowedLangs>("uz");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [newsItem, setNewsItem] = useState<any>(null);
+
+  // --- 1. MONGODBDAN SLUG ORQALI MALUMOTNI OLISH ---
+  useEffect(() => {
+    const fetchNewsDetail = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch("/api/admin/requests");
+        const data = await res.json();
+
+        if (data.success && data.news) {
+          // Barcha news ichidan hozirgi slugga mosini topamiz
+          const found = data.news.find((item: any) => item.slug === slug);
+          setNewsItem(found || null);
+        }
+      } catch (error) {
+        console.error("Yangilik tafsilotini yuklashda xatolik:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (slug) {
+      fetchNewsDetail();
+    }
+  }, [slug]);
+
+  // --- Confirm Modal State ---
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     type: "approve" | "reject" | null;
@@ -48,7 +76,7 @@ export default function NewsDetailRequest() {
     type: null,
   });
 
-  // --- 2-BOSQICH: Notification Modal State ---
+  // --- Notification Modal State ---
   const [notifState, setNotifState] = useState<{
     isOpen: boolean;
     actionType: "approve" | "reject" | null;
@@ -57,9 +85,14 @@ export default function NewsDetailRequest() {
     actionType: null,
   });
 
-  const newsItem: NewsItem | undefined = MOCK_NEWS.find(
-    (item: { slug: string }) => item.slug === slug,
-  );
+  if (isLoading) {
+    return (
+      <div className="w-full min-h-screen flex flex-col items-center justify-center text-slate-400">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mb-2" />
+        <p className="text-xs font-bold">Yangilik yuklanmoqda...</p>
+      </div>
+    );
+  }
 
   if (!newsItem) {
     return (
@@ -78,8 +111,16 @@ export default function NewsDetailRequest() {
   }
 
   const currentTranslation =
-    newsItem.translations[activeLang] || newsItem.translations["uz"];
+    newsItem.translations?.[activeLang] || newsItem.translations?.["uz"];
   const allBanners = currentTranslation?.banners || [];
+
+  // Muallif (User) malumotlarini aniqlab olamiz
+  const authorObj = newsItem.authorId;
+  const authorId = typeof authorObj === "object" ? authorObj?._id : authorObj;
+  const authorUsername =
+    (typeof authorObj === "object" &&
+      (authorObj?.username || authorObj?.name)) ||
+    "Muallif";
 
   // --- Confirm Modal Boshqaruvi ---
   const openConfirm = (type: "approve" | "reject") => {
@@ -90,48 +131,80 @@ export default function NewsDetailRequest() {
     setConfirmModal({ isOpen: false, type: null });
   };
 
-  // Confirm tasdiqlanganda Notification modalini ochish
-  const handleConfirmAccept = () => {
-    const currentType = confirmModal.type;
-    closeConfirm();
-
-    // Confirm yopilgach Notification Modalni ochamiz
-    if (currentType) {
-      setNotifState({
-        isOpen: true,
-        actionType: currentType,
-      });
-    }
-  };
-
-  // --- Notification Modal Boshqaruvi ---
   const handleCloseNotifModal = () => {
     setNotifState({
       isOpen: false,
       actionType: null,
     });
+    handlePush();
   };
 
-  // Notification Modal yuborilganda bajariluvchi oxirgi bosqich
-  const handleNotificationSubmit = async (payload: NotificationPayload) => {
-    const requestData = {
-      newsId: newsItem.slug,
-      action: notifState.actionType, // approve yoki reject
-      notification: payload, // Developer uchun xabar matni
-    };
+  // --- 1. Confirm modalda "Ha, davom etish" bosilganda ---
+  const handleConfirmAccept = async () => {
+    const currentType = confirmModal.type; // "approve" yoki "reject"
+    closeConfirm();
 
-    console.log("Backendga yuborilayotgan sorov malumoti:", requestData);
+    if (!currentType) return;
 
-    // API bilan ishlash joyi:
-    // await api.post(/admin/news/action, requestData);
+    try {
+      // 🚀 1. Darhol bazada statusni o'zgartiramiz (PATCH so'rovi)
+      const res = await fetch("/api/admin/action-request", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetId: newsItem._id,
+          targetType: "news",
+          action: currentType,
+        }),
+      });
 
-    handleCloseNotifModal();
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        alert(data.message || "Xatolik yuz berdi");
+        return;
+      }
+
+      // 2. Bazadan muvaffaqiyatli o'tgach, Notification oynasini ochamiz
+      setNotifState({
+        isOpen: true,
+        actionType: currentType,
+      });
+    } catch (error) {
+      console.error("Action error:", error);
+      alert("Server bilan bog'lanishda xatolik!");
+    }
+  };
+  const handlePush = async () => {
     router.push("/admin/requests");
   };
+  // --- 2. Notification modal yuborilganda yoki yopilganda ---
+  const handleNotificationSubmit = async (payload: NotificationPayload) => {
+    try {
+      // Agar bildirishnoma matni kiritilib yuborilsa, developerga jo'natamiz
+      if (authorId) {
+        await fetch("/api/admin/send-notification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: authorId,
+            targetId: authorId,
+            targetType: "user",
+            notification: payload,
+          }),
+        });
+      }
+    } catch (error) {
+      console.error("Notification send error:", error);
+    } finally {
+      handleCloseNotifModal();
+      router.push("/admin/requests");
+    }
+  };
 
-  // Developer uchun tayyorlanadigan default bildirishnoma matnlari
   const getInitialValues = (): Partial<Record<Language, MultiLangContent>> => {
     const isApprove = notifState.actionType === "approve";
+    const titleUz = currentTranslation?.title || "Yangilik";
 
     return {
       uz: {
@@ -139,26 +212,26 @@ export default function NewsDetailRequest() {
           ? "Yangiligingiz tasdiqlandi"
           : "Yangiligingiz rad etildi",
         message: isApprove
-          ? "Siz yuborgan yangilik sorovi korib chiqildi va platformada elon qilindi."
-          : "Afsuski, siz yuborgan yangilik sorovi moderatsiyadan otmadi va rad etildi.",
+          ? `Siz yuborgan "${titleUz}" yangilik sorovi korib chiqildi va platformada elon qilindi.`
+          : `Afsuski, siz yuborgan "${titleUz}" yangilik sorovi moderatsiyadan otmadi va rad etildi.`,
       },
       ru: {
         title: isApprove ? "Ваша новость одобрена" : "Ваша новость отклонена",
         message: isApprove
-          ? "Ваша заявка на новость была рассмотрена и опубликована на платформе."
-          : "К сожалению, ваша заявка на новость не прошла модерацию и была отклонена.",
+          ? `Ваша заявка на новость "${titleUz}" была рассмотрена и опубликована.`
+          : `К сожалению, ваша заявка на новость "${titleUz}" была отклонена.`,
       },
       en: {
         title: isApprove ? "Your news approved" : "Your news rejected",
         message: isApprove
-          ? "Your news request has been reviewed and published on the platform."
-          : "Unfortunately, your news request did not pass moderation and was rejected.",
+          ? `Your news request "${titleUz}" has been reviewed and published.`
+          : `Unfortunately, your news request "${titleUz}" was rejected.`,
       },
       tr: {
         title: isApprove ? "Haberiniz onaylandı" : "Haberiniz reddedildi",
         message: isApprove
-          ? "Haber talebiniz incelendi ve platformda yayınlandı."
-          : "Ne yazık ki haber talebiniz moderasyondan geçemedi ve reddedildi.",
+          ? `"${titleUz}" haber talebiniz incelendi ve yayınlandı.`
+          : `Ne yazık ki "${titleUz}" haber talebiniz reddedildi.`,
       },
     };
   };
@@ -177,7 +250,7 @@ export default function NewsDetailRequest() {
 
         <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400">
           <Calendar className="w-3.5 h-3.5" />
-          <span>Sana: {newsItem.createdAt}</span>
+          <span>Sana: {new Date(newsItem.createdAt).toLocaleDateString()}</span>
         </div>
       </div>
 
@@ -196,17 +269,15 @@ export default function NewsDetailRequest() {
                 watchOverflow={true}
                 className="w-full h-full custom-swiper"
               >
-                {allBanners.map(
-                  (banner: string | Blob | undefined, index: number) => (
-                    <SwiperSlide key={`${banner}-${index}`}>
-                      <img
-                        src={typeof banner === "string" ? banner : undefined}
-                        alt={`News Banner ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </SwiperSlide>
-                  ),
-                )}
+                {allBanners.map((banner: string, index: number) => (
+                  <SwiperSlide key={`${banner}-${index}`}>
+                    <img
+                      src={banner}
+                      alt={`News Banner ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </SwiperSlide>
+                ))}
               </Swiper>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-slate-400 dark:text-slate-600 text-xs">
@@ -225,7 +296,7 @@ export default function NewsDetailRequest() {
                 </span>
               </div>
               <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/60 p-1 rounded-xl">
-                {(["uz", "ru", "en", "tr"] as AllowedLangs[]).map((lang) => (
+                {(["uz", "ru", "en", "tu"] as AllowedLangs[]).map((lang) => (
                   <button
                     key={lang}
                     onClick={() => setActiveLang(lang)}
@@ -270,21 +341,15 @@ export default function NewsDetailRequest() {
 
             <div className="space-y-3 text-xs font-semibold text-slate-500 dark:text-slate-400">
               <div className="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-900/40">
-                <span>Oyin:</span>
+                <span>Muallif:</span>
                 <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                  {newsItem.gameTitle}
+                  @{authorUsername}
                 </span>
               </div>
               <div className="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-900/40">
-                <span>Game ID:</span>
-                <span className="font-mono text-slate-800 dark:text-white">
-                  {newsItem.gameId}
-                </span>
-              </div>
-              <div className="flex justify-between items-center py-1.5 border-b border-slate-100 dark:border-slate-900/40">
-                <span>Ommaviylik:</span>
-                <span className="text-slate-800 dark:text-white">
-                  {newsItem.isPublic ? "Ommaviy" : "Yopiq"}
+                <span>Korinish:</span>
+                <span className="text-slate-800 dark:text-white capitalize">
+                  {newsItem.visibility}
                 </span>
               </div>
               <div className="flex flex-col gap-1.5 py-1">
@@ -394,8 +459,8 @@ export default function NewsDetailRequest() {
         onSubmit={handleNotificationSubmit}
         isPublic={false}
         targetUser={{
-          id: newsItem.gameId,
-          name: newsItem.gameTitle || "Foydalanuvchi",
+          id: authorId || "",
+          name: authorUsername,
         }}
         initialValues={getInitialValues()}
       />

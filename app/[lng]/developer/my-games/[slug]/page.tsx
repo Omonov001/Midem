@@ -16,7 +16,7 @@ export default async function Page({ params }: PageProps) {
   if (!currentSlug) {
     return (
       <div className="text-white p-8 text-center">
-        URL manzildan oyin kaliti (slug) topilmadi.
+        URL manzildan o&apos;yin kaliti (slug) topilmadi.
       </div>
     );
   }

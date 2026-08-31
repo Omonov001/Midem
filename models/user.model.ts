@@ -1,7 +1,7 @@
 import { Schema, model, models, Document } from "mongoose";
 
-// Rank turlari uchun alohida type
-export type UserRank = "bronze" | "gold" | "platinum" | "diamond";
+// Rank turlari
+export type UserRank = "bronze" | "silver" | "gold" | "platinum" | "diamond";
 
 export interface IUser extends Document {
   clerkId: string;
@@ -9,9 +9,13 @@ export interface IUser extends Document {
   username?: string;
   email: string;
   picture: string;
+
   role: "user" | "admin" | "owner" | "developer";
 
-  // Dashboard statistikasi uchun maydonlar
+  // Stripe Connect
+  stripeAccountId?: string | null;
+
+  // Dashboard statistikasi
   balance: number;
   gamesCount: number;
   achievements: number;
@@ -21,6 +25,12 @@ export interface IUser extends Document {
   level: number;
   rank: UserRank;
   isPremium: boolean;
+
+  // Ban holati
+  isBanned: boolean;
+
+  // Oxirgi faollik
+  lastSeen: Date;
 
   // Oxirgi o'ynalgan o'yin
   lastPlayedGame?: {
@@ -35,41 +45,121 @@ export interface IUser extends Document {
 
 const UserSchema = new Schema<IUser>(
   {
-    clerkId: { type: String, required: true, unique: true },
-    name: { type: String, required: true },
-    username: { type: String, unique: true, sparse: true },
-    email: { type: String, required: true, unique: true },
-    picture: { type: String, required: true },
+    clerkId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
+    name: {
+      type: String,
+      required: true,
+    },
+
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
+    picture: {
+      type: String,
+      required: true,
+    },
+
+    // ROLE
     role: {
       type: String,
       enum: ["user", "admin", "owner", "developer"],
       default: "user",
     },
 
-    // --- DASHBOARD VA STATISTIKA MAYDONLARI ---
-    balance: { type: Number, default: 0 },
-    gamesCount: { type: Number, default: 0 },
-    achievements: { type: Number, default: 0 },
-    playtime: { type: Number, default: 0 },
+    // STRIPE CONNECT
+    stripeAccountId: {
+      type: String,
+      default: null,
+      index: true,
+    },
 
-    // Daraja va Unvon (Rank)
-    level: { type: Number, default: 1 },
+    // DASHBOARD VA STATISTIKA
+    balance: {
+      type: Number,
+      default: 0,
+    },
+
+    gamesCount: {
+      type: Number,
+      default: 0,
+    },
+
+    achievements: {
+      type: Number,
+      default: 0,
+    },
+
+    playtime: {
+      type: Number,
+      default: 0,
+    },
+
+    // LEVEL VA RANK
+    level: {
+      type: Number,
+      default: 1,
+    },
+
     rank: {
       type: String,
-      enum: ["bronze", "gold", "platinum", "diamond"],
+      enum: ["bronze", "silver", "gold", "platinum", "diamond"],
       default: "bronze",
     },
 
-    isPremium: { type: Boolean, default: false },
+    isPremium: {
+      type: Boolean,
+      default: false,
+    },
 
-    // Oxirgi o'ynalgan o'yin
+    // BAN
+    isBanned: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
+    // USER OXIRGI FAOLLIGI
+    lastSeen: {
+      type: Date,
+      default: Date.now,
+      index: true,
+    },
+
+    // OXIRGI O'YNALGAN O'YIN
     lastPlayedGame: {
-      title: { type: String, default: "" },
-      image: { type: String, default: "" },
-      lastPlayedAt: { type: Date, default: Date.now },
+      title: {
+        type: String,
+        default: "",
+      },
+
+      image: {
+        type: String,
+        default: "",
+      },
+
+      lastPlayedAt: {
+        type: Date,
+        default: Date.now,
+      },
     },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+  },
 );
 
 const User = models.User || model<IUser>("User", UserSchema);
