@@ -3,54 +3,43 @@ import { connectToDatabase } from "@/lib/mongoose";
 import Game from "@/models/game.model";
 import User from "@/models/user.model";
 import { NextResponse } from "next/server";
+import { currentUser } from "@clerk/nextjs/server";
 import { S3Client, DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 // 🛠️ Cloudflare R2 Client
 const r2Client = new S3Client({
   region: "auto",
   endpoint: process.env.R2_ENDPOINT,
-  forcePathStyle: true, // AWS domenlariga adashib ulanmasligi uchun
+  forcePathStyle: true,
   credentials: {
     accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
     secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
   },
 });
 
-/**
- * 🛠️ URL yoki Key ichidan R2 fayl yo'lini toza ajratib beruvchi funksiya
- * JPG, PNG, SVG, WEBP — barchasini o'z holicha saqlab qoladi!
- */
 function extractR2Key(fileUrlOrKey: string): string {
   if (!fileUrlOrKey || typeof fileUrlOrKey !== "string") return "";
 
   let key = fileUrlOrKey.trim();
 
-  // 1. Agar to'liq URL bo'lsa (https://pub-xxx.r2.dev/images/avatar.png)
   if (key.startsWith("http://") || key.startsWith("https://")) {
     try {
       const parsedUrl = new URL(key);
-      key = parsedUrl.pathname; // "/images/avatar.png"
+      key = parsedUrl.pathname;
     } catch {
       // ignore
     }
   }
 
-  // 2. Boshidagi ortiqcha "/" belgilarni tozalaymiz ("images/avatar.png")
   key = key.replace(/^\/+/, "");
 
   return decodeURIComponent(key);
 }
 
-/**
- * 🗑️ R2 Bucket'dan faylni tegishli bucket nomiga qarab o'chirish
- */
 async function deleteFromR2(fileKey: string) {
   const key = extractR2Key(fileKey);
   if (!key) return;
 
-  // 🎯 Bucket'ni avtomatik aniqlaymiz:
-  // "images/" bilan boshlansa -> midem-assets
-  // Aks holda ("games/") -> midem-games
   const targetBucket = key.startsWith("images/")
     ? "midem-assets"
     : "midem-games";
@@ -82,7 +71,6 @@ export async function GET(
     const resolvedParams = await params;
     const slug = resolvedParams.slug;
 
-    // `.lean()` qo'shildi — Mongoose Map va Schema modellarini oddiy JS ob'ektiga o'giradi
     const game = await Game.findOne({ slug: slug })
       .populate({
         path: "developerId",
@@ -95,7 +83,24 @@ export async function GET(
       return NextResponse.json({ error: "Topilmadi" }, { status: 404 });
     }
 
-    return NextResponse.json(game);
+    // Foydalanuvchi ushbu o'yinni sotib olganini tekshiramiz
+    let userHasBought = false;
+
+    const clerkUser = await currentUser();
+    if (clerkUser) {
+      const dbUser = await User.findOne({ clerkId: clerkUser.id })
+        .select("purchasedGames")
+        .lean();
+
+      if (dbUser) {
+        userHasBought =
+          (dbUser as any).purchasedGames?.some(
+            (id: any) => id.toString() === (game as any)._id.toString(),
+          ) || false;
+      }
+    }
+
+    return NextResponse.json({ ...game, userHasBought });
   } catch (error) {
     console.error("GET Game Error:", error);
     return NextResponse.json({ error: "Server xatosi" }, { status: 500 });
@@ -113,10 +118,9 @@ export async function PUT(
     const slug = resolvedParams.slug;
     const body = await request.json();
 
-    // 🔄 Tahrirlanganda statusni majburiy ravishda "requested" ga o'zgartiramiz
     const updatedData = {
       ...body,
-      request: "requested", // Admin qaytadan tekshirishi uchun status yangilanadi
+      request: "requested",
     };
 
     const updatedGame = await Game.findOneAndUpdate(
@@ -158,7 +162,6 @@ export async function DELETE(
     const body = await request.json();
     const { confirmTitle } = body;
 
-    // 1. O'yinni bazadan izlaymiz
     const game = await Game.findOne({ slug });
 
     if (!game) {
@@ -168,7 +171,6 @@ export async function DELETE(
       );
     }
 
-    // 🛡️ 2. XAVFSIZLIK TEKSHIRUVI
     const titles = [
       slug,
       game.langData?.uz?.title,
@@ -184,10 +186,8 @@ export async function DELETE(
       );
     }
 
-    // 🔍 3. R2 FAYLLARINI YIG'ISH (barcha formatlar)
     const rawKeysToDelete: string[] = [];
 
-    // A) LangData ichidagi Rasmlar (.jpg, .png, .svg va h.k.)
     if (game.langData) {
       const langs = ["uz", "ru", "en", "tr"] as const;
       langs.forEach((langKey) => {
@@ -205,7 +205,6 @@ export async function DELETE(
       });
     }
 
-    // B) OSDetails ichidagi O'yin fayllari
     if (game.osDetails) {
       const osDetailsObj =
         game.osDetails instanceof Map
@@ -219,7 +218,6 @@ export async function DELETE(
       });
     }
 
-    // Takroriy yoki bo'sh fayllarni olib tashlaymiz
     const uniqueKeys = Array.from(new Set(rawKeysToDelete)).filter(Boolean);
 
     console.log("========================================");
@@ -229,12 +227,10 @@ export async function DELETE(
     console.log("Fayllar ro'yxati:", uniqueKeys);
     console.log("========================================");
 
-    // 🗑️ 4. CLOUDFLARE R2 DAGI FAYLLARNI O'CHIRISH
     if (uniqueKeys.length > 0) {
       await Promise.all(uniqueKeys.map((file) => deleteFromR2(file)));
     }
 
-    // 🗑️ 5. MONGODB DAN BUTUNLAY O'CHIRISH
     await Game.deleteOne({ _id: game._id });
 
     return NextResponse.json(

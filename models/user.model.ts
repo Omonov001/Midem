@@ -21,6 +21,9 @@ export interface IUser extends Document {
   achievements: number;
   playtime: number;
 
+  // Sotib olingan o'yinlar
+  purchasedGames: Schema.Types.ObjectId[];
+
   // Daraja va Rank
   level: number;
   rank: UserRank;
@@ -106,6 +109,12 @@ const UserSchema = new Schema<IUser>(
     playtime: {
       type: Number,
       default: 0,
+    },
+
+    // SOTIB OLINGAN O'YINLAR
+    purchasedGames: {
+      type: [{ type: Schema.Types.ObjectId, ref: "Game" }],
+      default: [],
     },
 
     // LEVEL VA RANK

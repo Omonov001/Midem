@@ -31,8 +31,6 @@ export async function POST(req: NextRequest) {
     const order = payload.data.attributes;
     const orderId = payload.data.id;
 
-    // custom_data orqali qaysi game va buyer ekanini uzatamiz
-    // (checkout yaratganda quyida ko'rsataman)
     const gameId = payload.meta?.custom_data?.gameId;
     const buyerId = payload.meta?.custom_data?.buyerId;
 
@@ -75,6 +73,12 @@ export async function POST(req: NextRequest) {
       await User.findByIdAndUpdate(game.developerId, {
         $inc: { balance: developerShare },
       });
+
+      // Xaridorning "sotib olingan o'yinlar" ro'yxatiga qo'shish
+      await User.findByIdAndUpdate(buyerId, {
+        $addToSet: { purchasedGames: gameId },
+        $inc: { gamesCount: 1 },
+      });
     } catch (err: unknown) {
       // Agar duplicate order kelsa (Lemon Squeezy webhookni qayta yuborishi mumkin)
       if (
@@ -101,6 +105,12 @@ export async function POST(req: NextRequest) {
       // Developer balansidan ayirib qo'yamiz
       await User.findByIdAndUpdate(purchase.developerId, {
         $inc: { balance: -purchase.developerShare },
+      });
+
+      // Xaridorning ro'yxatidan olib tashlaymiz
+      await User.findByIdAndUpdate(purchase.buyerId, {
+        $pull: { purchasedGames: purchase.gameId },
+        $inc: { gamesCount: -1 },
       });
     }
   }
