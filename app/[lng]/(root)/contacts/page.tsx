@@ -78,8 +78,8 @@ function ContactPage() {
     e.preventDefault();
     setLoading(true);
 
-    const botToken = process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
-    const chatId = process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
 
     const text = `🚀 Yangi xabar!\n\n👤 Ism: ${formData.name}\n📧 Email: ${formData.email}\n📝 Xabar: ${formData.message}`;
 

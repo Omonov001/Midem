@@ -29,7 +29,18 @@ import {
   IoCheckmarkCircleOutline,
   IoAlertCircleOutline,
   IoCloseOutline,
+  IoCardOutline,
+  IoRefreshOutline,
 } from "react-icons/io5";
+
+interface CardData {
+  _id: string;
+  cardLast4: string;
+  cardholderName: string;
+  country: string;
+  currency: string;
+  verified: boolean;
+}
 
 export default function EditGameForm({ gameSlug }: { gameSlug: string }) {
   const router = useRouter();
@@ -82,6 +93,32 @@ export default function EditGameForm({ gameSlug }: { gameSlug: string }) {
   const [priceType, setPriceType] = useState<"free" | "paid">("free");
   const [price, setPrice] = useState<string>("0$");
 
+  // =========================
+  // PAYOUT CARDS
+  // =========================
+  const [cards, setCards] = useState<CardData[]>([]);
+  const [selectedCardId, setSelectedCardId] = useState("");
+  const [cardsLoading, setCardsLoading] = useState(false);
+
+  const loadCards = async () => {
+    try {
+      setCardsLoading(true);
+      const res = await fetch("/api/cards", { cache: "no-store" });
+      if (!res.ok) throw new Error("Kartalarni yuklab bolmadi");
+      const data = await res.json();
+      setCards(data.data || []);
+    } catch (error) {
+      console.error("Cards load error:", error);
+    } finally {
+      setCardsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadCards();
+  }, []);
+
   const [techData, setTechData] = useState<ITechnicalDetails>({
     version: "",
     downloadSize: "",
@@ -129,6 +166,15 @@ export default function EditGameForm({ gameSlug }: { gameSlug: string }) {
             releaseDate: "",
           },
         );
+
+        // Mavjud payout kartani oldindan tanlab qo'yamiz
+        if (data.payoutCardId) {
+          const cardId =
+            typeof data.payoutCardId === "string"
+              ? data.payoutCardId
+              : data.payoutCardId._id || data.payoutCardId.toString();
+          setSelectedCardId(cardId);
+        }
 
         setLangData({
           uz: { whatsNew: [""], ...data.langData?.uz },
@@ -297,6 +343,17 @@ export default function EditGameForm({ gameSlug }: { gameSlug: string }) {
   // 🚀 SAQLASH TUGMASI BOSILGANDA (Hamma ish shu yerda bajariladi)
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+
+    // Paid o'yin uchun payout karta majburiy
+    if (priceType === "paid" && !selectedCardId) {
+      showModal(
+        "Xatolik!",
+        "Pullik o'yin uchun payout kartani tanlashingiz kerak!",
+        "error",
+      );
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -331,6 +388,7 @@ export default function EditGameForm({ gameSlug }: { gameSlug: string }) {
         osDetails: updatedOsDetails,
         priceType,
         price: priceType === "paid" ? price : "0$",
+        payoutCardId: priceType === "paid" ? selectedCardId : null,
         techData,
         langData,
         request: "requested",
@@ -1009,6 +1067,110 @@ export default function EditGameForm({ gameSlug }: { gameSlug: string }) {
                 </div>
               )}
             </div>
+
+            {/* PAYOUT CARD SELECTOR */}
+            {priceType === "paid" && (
+              <div className="pt-4 border-t border-white/5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-black text-blue-400 flex items-center gap-2">
+                      <IoCardOutline size={17} />
+                      Developer Payout
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      Sotuvlardan tushadigan mablag shu kartaga yuboriladi.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={loadCards}
+                    disabled={cardsLoading}
+                    className="p-2 rounded-lg bg-white/5 hover:bg-white/10"
+                  >
+                    <IoRefreshOutline
+                      size={16}
+                      className={cardsLoading ? "animate-spin" : ""}
+                    />
+                  </button>
+                </div>
+
+                {cardsLoading ? (
+                  <div className="p-4 rounded-xl bg-white/5 text-xs text-slate-400 text-center">
+                    Kartalar yuklanmoqda...
+                  </div>
+                ) : cards.length === 0 ? (
+                  <div className="p-4 rounded-xl border border-dashed border-white/10 text-center">
+                    <IoCardOutline
+                      size={28}
+                      className="mx-auto text-slate-500 mb-2"
+                    />
+                    <p className="text-xs font-bold text-slate-300">
+                      Hali payout karta qoshilmagan
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      Avval payout kartangizni qoshing.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => router.push("/developer/cards")}
+                      className="mt-3 px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold"
+                    >
+                      + Karta qoshish
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {cards
+                      .filter((card) => card.verified)
+                      .map((card) => (
+                        <button
+                          key={card._id}
+                          type="button"
+                          onClick={() => setSelectedCardId(card._id)}
+                          className={cn(
+                            "w-full p-4 rounded-xl border text-left transition-all",
+                            selectedCardId === card._id
+                              ? "border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/10"
+                              : "border-white/5 bg-white/5 hover:border-white/10",
+                          )}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+                                <IoCardOutline size={21} />
+                              </div>
+                              <div>
+                                <p className="text-xs font-black">
+                                  {card.cardholderName}
+                                </p>
+                                <p className="text-[11px] text-slate-400 mt-0.5">
+                                  •••• {card.cardLast4} · {card.currency}
+                                </p>
+                              </div>
+                            </div>
+
+                            {selectedCardId === card._id && (
+                              <IoCheckmarkCircleOutline
+                                size={22}
+                                className="text-blue-500"
+                              />
+                            )}
+                          </div>
+                        </button>
+                      ))}
+
+                    <button
+                      type="button"
+                      onClick={() => router.push("/developer/cards")}
+                      className="w-full py-3 rounded-xl border border-dashed border-blue-500/30 text-blue-400 text-xs font-bold hover:bg-blue-500/5 transition-all"
+                    >
+                      + Yangi payout karta qoshish
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* YANGILIKLAR ROYXATI */}
@@ -1049,16 +1211,6 @@ export default function EditGameForm({ gameSlug }: { gameSlug: string }) {
               ))}
             </div>
           </div>
-
-          {/* PASTKI SAQLASH TUGMASI */}
-          {/* <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-xl font-black uppercase italic tracking-wider transition-all active:scale-[0.99] flex items-center justify-center gap-2 shadow-lg"
-          >
-            <IoCloudUploadOutline size={20} />
-            {isSubmitting ? "Saqlanmoqda..." : "Ozgarishlarni Saqlash"}
-          </button> */}
         </form>
       </div>
     </main>
