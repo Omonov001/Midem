@@ -143,9 +143,7 @@ export async function POST(req: NextRequest) {
       // AMOUNT
       // =========================
 
-      // Eski ishlagan koddagi kabi.
       const totalAmount = Number(order.total) / 100;
-
       const currency = String(order.currency || "USD").toUpperCase();
 
       if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
@@ -162,7 +160,6 @@ export async function POST(req: NextRequest) {
       // =========================
 
       const commission = +(totalAmount * 0.2).toFixed(2);
-
       const developerShare = +(totalAmount * 0.8).toFixed(2);
 
       // =========================
@@ -170,15 +167,17 @@ export async function POST(req: NextRequest) {
       // =========================
 
       const createdAt = new Date();
-
       const availableAt = calculateAvailableAt(createdAt);
 
       // =========================
       // PURCHASE
       // =========================
 
+      let purchase;
+      let isNewPurchase = false;
+
       try {
-        await Purchase.create({
+        purchase = await Purchase.create({
           buyerId,
           gameId,
           developerId: game.developerId,
@@ -198,6 +197,8 @@ export async function POST(req: NextRequest) {
           releasedAt: null,
         });
 
+        isNewPurchase = true;
+
         console.log("✅ PURCHASE CREATED:", {
           orderId: String(orderId),
           buyerId,
@@ -208,53 +209,83 @@ export async function POST(req: NextRequest) {
           availableAt,
         });
       } catch (error) {
-        // Lemon Squeezy webhookni qayta yuborishi mumkin
         if (isDuplicateError(error)) {
-          console.log("⚠️ Duplicate order ignored:", orderId);
+          console.log(
+            "⚠️ Duplicate order. Existing Purchase will be used:",
+            orderId,
+          );
 
-          return NextResponse.json({
-            received: true,
-            duplicate: true,
+          purchase = await Purchase.findOne({
+            lemonSqueezyOrderId: String(orderId),
           });
-        }
 
-        throw error;
+          if (!purchase) {
+            console.error(
+              "❌ Duplicate Purchase detected, but existing Purchase not found:",
+              orderId,
+            );
+
+            return NextResponse.json(
+              {
+                error:
+                  "Duplicate Purchase detected but existing Purchase not found",
+              },
+              { status: 500 },
+            );
+          }
+
+          console.log("♻️ EXISTING PURCHASE FOUND:", {
+            purchaseId: purchase._id.toString(),
+            orderId: String(orderId),
+          });
+        } else {
+          throw error;
+        }
       }
 
-      // =========================
+      // =========================================================
       // DEVELOPER BALANCE
-      // =========================
+      // =========================================================
 
-      await User.findByIdAndUpdate(game.developerId, {
-        $inc: {
-          pendingBalance: developerShare,
-          totalEarnings: developerShare,
-        },
-      });
+      // Faqat yangi Purchase yaratilganda balance oshiriladi.
+      if (isNewPurchase) {
+        const updatedDeveloper = await User.findByIdAndUpdate(
+          game.developerId,
+          {
+            $inc: {
+              pendingBalance: developerShare,
+              totalEarnings: developerShare,
+            },
+          },
+          {
+            new: true,
+          },
+        );
 
-      console.log("💰 Developer pending balance updated");
+        if (!updatedDeveloper) {
+          console.error("❌ Developer User topilmadi:", game.developerId);
 
-      // =========================
+          return NextResponse.json(
+            { error: "Developer user not found" },
+            { status: 500 },
+          );
+        }
+
+        console.log("💰 Developer pending balance updated:", {
+          developerId: String(game.developerId),
+          amount: developerShare,
+        });
+      } else {
+        console.log("⏭️ Developer balance already processed:", orderId);
+      }
+
+      // =========================================================
       // BUYER PURCHASED GAMES
-      // =========================
+      // =========================================================
 
-      const updatedBuyer = await User.findByIdAndUpdate(
-        buyerId,
-        {
-          $addToSet: {
-            purchasedGames: game._id,
-          },
+      const buyer = await User.findById(buyerId);
 
-          $inc: {
-            gamesCount: 1,
-          },
-        },
-        {
-          new: true,
-        },
-      );
-
-      if (!updatedBuyer) {
+      if (!buyer) {
         console.error("❌ Buyer User topilmadi:", buyerId);
 
         return NextResponse.json(
@@ -263,10 +294,47 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      console.log("🎮 GAME ADDED TO BUYER:", {
-        buyerId,
-        gameId: game._id.toString(),
-      });
+      // Game oldindan sotib olinganmi?
+      const alreadyOwned = buyer.purchasedGames?.some(
+        (id: unknown) => String(id) === String(game._id),
+      );
+
+      if (!alreadyOwned) {
+        const updatedBuyer = await User.findByIdAndUpdate(
+          buyerId,
+          {
+            $addToSet: {
+              purchasedGames: game._id,
+            },
+
+            $inc: {
+              gamesCount: 1,
+            },
+          },
+          {
+            new: true,
+          },
+        );
+
+        if (!updatedBuyer) {
+          console.error("❌ Buyer update failed:", buyerId);
+
+          return NextResponse.json(
+            { error: "Buyer update failed" },
+            { status: 500 },
+          );
+        }
+
+        console.log("🎮 GAME ADDED TO BUYER:", {
+          buyerId,
+          gameId: game._id.toString(),
+        });
+      } else {
+        console.log("⏭️ Buyer already owns this game:", {
+          buyerId,
+          gameId: game._id.toString(),
+        });
+      }
     }
 
     // =========================================================
@@ -311,20 +379,16 @@ export async function POST(req: NextRequest) {
       // =========================
 
       if (!purchase.releasedAt) {
-        // Hali availableBalance ga o'tmagan
         await User.findByIdAndUpdate(purchase.developerId, {
           $inc: {
             pendingBalance: -purchase.developerShare,
-
             totalEarnings: -purchase.developerShare,
           },
         });
       } else {
-        // Already available balance ga o'tgan
         await User.findByIdAndUpdate(purchase.developerId, {
           $inc: {
             availableBalance: -purchase.developerShare,
-
             totalEarnings: -purchase.developerShare,
           },
         });
