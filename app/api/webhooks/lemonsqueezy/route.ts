@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongoose";
@@ -9,12 +8,13 @@ import User from "@/models/user.model";
 function calculateAvailableAt(createdAt: Date) {
   const date = new Date(createdAt);
 
-  // Lemon Squeezy: 13 kunlik hold
+  // Lemon Squeezy hold: 13 kun
   date.setDate(date.getDate() + 13);
 
-  // Keyingi payout sanasi: 14 yoki 28
   const day = date.getDate();
 
+  // Keyingi payout availability:
+  // 14 yoki 28
   if (day <= 14) {
     date.setDate(14);
   } else if (day <= 28) {
@@ -24,7 +24,7 @@ function calculateAvailableAt(createdAt: Date) {
     date.setDate(14);
   }
 
-  // Bankka tushish uchun maksimal 5 kun
+  // Bank payout uchun taxminiy 5 kun
   date.setDate(date.getDate() + 5);
 
   return date;
@@ -41,95 +41,76 @@ function isDuplicateError(error: unknown) {
 
 export async function POST(req: NextRequest) {
   try {
-    // =========================================================
-    // 1. RAW BODY + SIGNATURE
-    // =========================================================
-
     const rawBody = await req.text();
 
-    const signature = req.headers.get("x-signature") ?? "";
+    // =========================
+    // 1. SIGNATURE
+    // =========================
 
+    const signature = req.headers.get("x-signature") ?? "";
     const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
 
     if (!secret) {
       console.error("❌ LEMONSQUEEZY_WEBHOOK_SECRET topilmadi");
 
       return NextResponse.json(
-        {
-          error: "Webhook secret sozlanmagan",
-        },
+        { error: "Webhook secret sozlanmagan" },
         { status: 500 },
       );
     }
 
-    const digest = crypto
-      .createHmac("sha256", secret)
-      .update(rawBody)
-      .digest("hex");
+    const hmac = crypto.createHmac("sha256", secret);
+    const digest = hmac.update(rawBody).digest("hex");
 
     const isValid =
       signature.length === digest.length &&
       crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature));
 
     if (!isValid) {
-      console.error("❌ Invalid Lemon Squeezy signature");
+      console.error("❌ Invalid signature");
 
-      return NextResponse.json(
-        {
-          error: "Invalid signature",
-        },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
     }
 
-    // =========================================================
-    // 2. PARSE PAYLOAD
-    // =========================================================
+    // =========================
+    // 2. PARSE WEBHOOK
+    // =========================
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let payload: any;
 
     try {
       payload = JSON.parse(rawBody);
     } catch {
-      return NextResponse.json(
-        {
-          error: "Invalid JSON",
-        },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
     }
 
-    const eventName = payload?.meta?.event_name;
+    const eventName = payload.meta?.event_name;
 
     console.log("🍋 Lemon Squeezy event:", eventName);
 
     await connectToDatabase();
 
     // =========================================================
-    // 3. ORDER CREATED
+    // ORDER CREATED
     // =========================================================
 
     if (eventName === "order_created") {
-      const order = payload?.data?.attributes;
-      const orderId = payload?.data?.id;
+      const order = payload.data?.attributes;
+      const orderId = payload.data?.id;
 
       if (!order || !orderId) {
         console.error("❌ Invalid order data");
 
         return NextResponse.json(
-          {
-            error: "Invalid order data",
-          },
+          { error: "Invalid order data" },
           { status: 400 },
         );
       }
 
-      // Lemon Squeezy checkout_data.custom
-      // webhookda meta.custom_data bo'lib keladi
-      const customData = payload?.meta?.custom_data ?? {};
-
-      const gameId = customData.gameId;
-      const buyerId = customData.buyerId;
+      // Lemon Squeezy custom data
+      const gameId = payload.meta?.custom_data?.gameId;
+      const buyerId = payload.meta?.custom_data?.buyerId;
 
       console.log("🛒 ORDER CREATED:", {
         orderId,
@@ -138,37 +119,31 @@ export async function POST(req: NextRequest) {
       });
 
       if (!gameId || !buyerId) {
-        console.error("❌ Missing custom_data:", customData);
+        console.error("❌ Missing custom_data:", payload.meta?.custom_data);
 
         return NextResponse.json(
-          {
-            error: "Missing gameId or buyerId",
-          },
+          { error: "Missing custom_data" },
           { status: 400 },
         );
       }
 
-      // =======================================================
+      // =========================
       // GAME
-      // =======================================================
+      // =========================
 
       const game = await Game.findById(gameId);
 
       if (!game) {
         console.error("❌ Game not found:", gameId);
 
-        return NextResponse.json(
-          {
-            error: "Game not found",
-          },
-          { status: 404 },
-        );
+        return NextResponse.json({ error: "Game not found" }, { status: 404 });
       }
 
-      // =======================================================
+      // =========================
       // AMOUNT
-      // =======================================================
+      // =========================
 
+      // Eski ishlagan koddagi kabi.
       const totalAmount = Number(order.total) / 100;
 
       const currency = String(order.currency || "USD").toUpperCase();
@@ -177,32 +152,30 @@ export async function POST(req: NextRequest) {
         console.error("❌ Invalid order amount:", order.total);
 
         return NextResponse.json(
-          {
-            error: "Invalid order amount",
-          },
+          { error: "Invalid order amount" },
           { status: 400 },
         );
       }
 
-      // =======================================================
-      // DEVELOPER EARNINGS
-      // =======================================================
+      // =========================
+      // COMMISSION
+      // =========================
 
       const commission = +(totalAmount * 0.2).toFixed(2);
 
       const developerShare = +(totalAmount * 0.8).toFixed(2);
 
-      // =======================================================
+      // =========================
       // AVAILABLE DATE
-      // =======================================================
+      // =========================
 
       const createdAt = new Date();
 
       const availableAt = calculateAvailableAt(createdAt);
 
-      // =======================================================
+      // =========================
       // PURCHASE
-      // =======================================================
+      // =========================
 
       try {
         await Purchase.create({
@@ -224,8 +197,18 @@ export async function POST(req: NextRequest) {
 
           releasedAt: null,
         });
+
+        console.log("✅ PURCHASE CREATED:", {
+          orderId: String(orderId),
+          buyerId,
+          gameId,
+          developerId: String(game.developerId),
+          amount: totalAmount,
+          developerShare,
+          availableAt,
+        });
       } catch (error) {
-        // Lemon Squeezy bir xil webhookni qayta yuborsa
+        // Lemon Squeezy webhookni qayta yuborishi mumkin
         if (isDuplicateError(error)) {
           console.log("⚠️ Duplicate order ignored:", orderId);
 
@@ -238,9 +221,9 @@ export async function POST(req: NextRequest) {
         throw error;
       }
 
-      // =======================================================
+      // =========================
       // DEVELOPER BALANCE
-      // =======================================================
+      // =========================
 
       await User.findByIdAndUpdate(game.developerId, {
         $inc: {
@@ -249,9 +232,11 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // =======================================================
+      console.log("💰 Developer pending balance updated");
+
+      // =========================
       // BUYER PURCHASED GAMES
-      // =======================================================
+      // =========================
 
       const updatedBuyer = await User.findByIdAndUpdate(
         buyerId,
@@ -272,49 +257,28 @@ export async function POST(req: NextRequest) {
       if (!updatedBuyer) {
         console.error("❌ Buyer User topilmadi:", buyerId);
 
-        // Purchase yaratilgan, lekin buyer update bo'lmadi.
-        // Webhook 500 qaytaradi, Lemon Squeezy qayta urinadi.
         return NextResponse.json(
-          {
-            error: "Buyer user not found",
-          },
+          { error: "Buyer user not found" },
           { status: 500 },
         );
       }
 
-      console.log("✅ PURCHASE SAVED:", {
-        orderId: String(orderId),
-
-        buyerId: buyerId.toString(),
-
+      console.log("🎮 GAME ADDED TO BUYER:", {
+        buyerId,
         gameId: game._id.toString(),
-
-        developerId: game.developerId.toString(),
-
-        amount: totalAmount,
-
-        developerShare,
-
-        purchasedGames: updatedBuyer.purchasedGames,
-
-        gamesCount: updatedBuyer.gamesCount,
-
-        availableAt,
       });
     }
 
     // =========================================================
-    // 4. ORDER REFUNDED
+    // ORDER REFUNDED
     // =========================================================
 
     if (eventName === "order_refunded") {
-      const orderId = payload?.data?.id;
+      const orderId = payload.data?.id;
 
       if (!orderId) {
         return NextResponse.json(
-          {
-            error: "Missing order ID",
-          },
+          { error: "Missing order ID" },
           { status: 400 },
         );
       }
@@ -342,11 +306,12 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // =======================================================
-      // AGAR PUL HALI PENDING BO'LSA
-      // =======================================================
+      // =========================
+      // DEVELOPER BALANCE
+      // =========================
 
       if (!purchase.releasedAt) {
+        // Hali availableBalance ga o'tmagan
         await User.findByIdAndUpdate(purchase.developerId, {
           $inc: {
             pendingBalance: -purchase.developerShare,
@@ -354,12 +319,8 @@ export async function POST(req: NextRequest) {
             totalEarnings: -purchase.developerShare,
           },
         });
-      }
-
-      // =======================================================
-      // AGAR PUL AVAILABLE BALANCE'GA CHIQQAN BO'LSA
-      // =======================================================
-      else {
+      } else {
+        // Already available balance ga o'tgan
         await User.findByIdAndUpdate(purchase.developerId, {
           $inc: {
             availableBalance: -purchase.developerShare,
@@ -369,9 +330,9 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // =======================================================
-      // BUYERDAN O'YINNI O'CHIRISH
-      // =======================================================
+      // =========================
+      // BUYER
+      // =========================
 
       await User.findByIdAndUpdate(purchase.buyerId, {
         $pull: {
@@ -385,22 +346,17 @@ export async function POST(req: NextRequest) {
 
       console.log("🔄 REFUND PROCESSED:", {
         orderId: String(orderId),
-
         purchaseId: purchase._id.toString(),
-
         buyerId: purchase.buyerId.toString(),
-
         gameId: purchase.gameId.toString(),
-
         developerShare: purchase.developerShare,
-
         wasReleased: Boolean(purchase.releasedAt),
       });
     }
 
-    // =========================================================
-    // 5. RESPONSE
-    // =========================================================
+    // =========================
+    // DONE
+    // =========================
 
     return NextResponse.json({
       received: true,
@@ -413,7 +369,9 @@ export async function POST(req: NextRequest) {
         error:
           error instanceof Error ? error.message : "Webhook processing failed",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }
