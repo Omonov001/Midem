@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongoose";
@@ -8,7 +9,7 @@ import User from "@/models/user.model";
 function calculateAvailableAt(createdAt: Date) {
   const date = new Date(createdAt);
 
-  // Lemon Squeezy 13 kunlik hold
+  // Lemon Squeezy: 13 kunlik hold
   date.setDate(date.getDate() + 13);
 
   // Keyingi payout sanasi: 14 yoki 28
@@ -23,7 +24,7 @@ function calculateAvailableAt(createdAt: Date) {
     date.setDate(14);
   }
 
-  // Payoutdan keyin bankka kelishi uchun maksimal 5 kun
+  // Bankka tushish uchun maksimal 5 kun
   date.setDate(date.getDate() + 5);
 
   return date;
@@ -41,21 +42,17 @@ function isDuplicateError(error: unknown) {
 export async function POST(req: NextRequest) {
   try {
     // =========================================================
-    // RAW BODY
+    // 1. RAW BODY + SIGNATURE
     // =========================================================
 
     const rawBody = await req.text();
-
-    // =========================================================
-    // SIGNATURE TEKSHIRISH
-    // =========================================================
 
     const signature = req.headers.get("x-signature") ?? "";
 
     const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET;
 
     if (!secret) {
-      console.error("LEMONSQUEEZY_WEBHOOK_SECRET topilmadi");
+      console.error("❌ LEMONSQUEEZY_WEBHOOK_SECRET topilmadi");
 
       return NextResponse.json(
         {
@@ -65,15 +62,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const hmac = crypto.createHmac("sha256", secret);
-
-    const digest = hmac.update(rawBody).digest("hex");
+    const digest = crypto
+      .createHmac("sha256", secret)
+      .update(rawBody)
+      .digest("hex");
 
     const isValid =
       signature.length === digest.length &&
       crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature));
 
     if (!isValid) {
+      console.error("❌ Invalid Lemon Squeezy signature");
+
       return NextResponse.json(
         {
           error: "Invalid signature",
@@ -83,10 +83,9 @@ export async function POST(req: NextRequest) {
     }
 
     // =========================================================
-    // PAYLOAD
+    // 2. PARSE PAYLOAD
     // =========================================================
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let payload: any;
 
     try {
@@ -107,15 +106,16 @@ export async function POST(req: NextRequest) {
     await connectToDatabase();
 
     // =========================================================
-    // ORDER CREATED
+    // 3. ORDER CREATED
     // =========================================================
 
     if (eventName === "order_created") {
       const order = payload?.data?.attributes;
-
       const orderId = payload?.data?.id;
 
       if (!order || !orderId) {
+        console.error("❌ Invalid order data");
+
         return NextResponse.json(
           {
             error: "Invalid order data",
@@ -124,24 +124,21 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // -------------------------------------------------------
-      // CUSTOM DATA
-      // -------------------------------------------------------
-
+      // Lemon Squeezy checkout_data.custom
+      // webhookda meta.custom_data bo'lib keladi
       const customData = payload?.meta?.custom_data ?? {};
 
       const gameId = customData.gameId;
-
       const buyerId = customData.buyerId;
 
-      console.log("🛒 PURCHASE WEBHOOK:", {
+      console.log("🛒 ORDER CREATED:", {
         orderId,
         gameId,
         buyerId,
       });
 
       if (!gameId || !buyerId) {
-        console.error("Missing custom_data:", customData);
+        console.error("❌ Missing custom_data:", customData);
 
         return NextResponse.json(
           {
@@ -151,14 +148,14 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // -------------------------------------------------------
+      // =======================================================
       // GAME
-      // -------------------------------------------------------
+      // =======================================================
 
       const game = await Game.findById(gameId);
 
       if (!game) {
-        console.error("Game not found:", gameId);
+        console.error("❌ Game not found:", gameId);
 
         return NextResponse.json(
           {
@@ -168,50 +165,16 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // -------------------------------------------------------
-      // BUYER
-      // -------------------------------------------------------
-
-      const buyer = await User.findById(buyerId);
-
-      if (!buyer) {
-        console.error("Buyer not found:", buyerId);
-
-        return NextResponse.json(
-          {
-            error: "Buyer not found",
-          },
-          { status: 404 },
-        );
-      }
-
-      // -------------------------------------------------------
-      // DEVELOPER
-      // -------------------------------------------------------
-
-      const developer = await User.findById(game.developerId);
-
-      if (!developer) {
-        console.error("Developer not found:", game.developerId);
-
-        return NextResponse.json(
-          {
-            error: "Developer not found",
-          },
-          { status: 404 },
-        );
-      }
-
-      // -------------------------------------------------------
+      // =======================================================
       // AMOUNT
-      // -------------------------------------------------------
+      // =======================================================
 
       const totalAmount = Number(order.total) / 100;
 
       const currency = String(order.currency || "USD").toUpperCase();
 
       if (!Number.isFinite(totalAmount) || totalAmount <= 0) {
-        console.error("Invalid order amount:", order.total);
+        console.error("❌ Invalid order amount:", order.total);
 
         return NextResponse.json(
           {
@@ -221,28 +184,30 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // MIDEM 20%
+      // =======================================================
+      // DEVELOPER EARNINGS
+      // =======================================================
+
       const commission = +(totalAmount * 0.2).toFixed(2);
 
-      // Developer 80%
       const developerShare = +(totalAmount * 0.8).toFixed(2);
 
-      // -------------------------------------------------------
-      // AVAILABLE AT
-      // -------------------------------------------------------
+      // =======================================================
+      // AVAILABLE DATE
+      // =======================================================
 
       const createdAt = new Date();
 
       const availableAt = calculateAvailableAt(createdAt);
 
-      // -------------------------------------------------------
-      // PURCHASE CREATE
-      // -------------------------------------------------------
+      // =======================================================
+      // PURCHASE
+      // =======================================================
 
       try {
         await Purchase.create({
-          buyerId: buyer._id,
-          gameId: game._id,
+          buyerId,
+          gameId,
           developerId: game.developerId,
 
           lemonSqueezyOrderId: String(orderId),
@@ -260,10 +225,7 @@ export async function POST(req: NextRequest) {
           releasedAt: null,
         });
       } catch (error) {
-        // -----------------------------------------------
-        // DUPLICATE WEBHOOK
-        // -----------------------------------------------
-
+        // Lemon Squeezy bir xil webhookni qayta yuborsa
         if (isDuplicateError(error)) {
           console.log("⚠️ Duplicate order ignored:", orderId);
 
@@ -276,24 +238,23 @@ export async function POST(req: NextRequest) {
         throw error;
       }
 
-      // =====================================================
+      // =======================================================
       // DEVELOPER BALANCE
-      // =====================================================
+      // =======================================================
 
-      await User.findByIdAndUpdate(developer._id, {
+      await User.findByIdAndUpdate(game.developerId, {
         $inc: {
           pendingBalance: developerShare,
-
           totalEarnings: developerShare,
         },
       });
 
-      // =====================================================
+      // =======================================================
       // BUYER PURCHASED GAMES
-      // =====================================================
+      // =======================================================
 
       const updatedBuyer = await User.findByIdAndUpdate(
-        buyer._id,
+        buyerId,
         {
           $addToSet: {
             purchasedGames: game._id,
@@ -308,27 +269,42 @@ export async function POST(req: NextRequest) {
         },
       );
 
+      if (!updatedBuyer) {
+        console.error("❌ Buyer User topilmadi:", buyerId);
+
+        // Purchase yaratilgan, lekin buyer update bo'lmadi.
+        // Webhook 500 qaytaradi, Lemon Squeezy qayta urinadi.
+        return NextResponse.json(
+          {
+            error: "Buyer user not found",
+          },
+          { status: 500 },
+        );
+      }
+
       console.log("✅ PURCHASE SAVED:", {
-        buyerId: buyer._id.toString(),
+        orderId: String(orderId),
+
+        buyerId: buyerId.toString(),
 
         gameId: game._id.toString(),
 
-        purchasedGames: updatedBuyer?.purchasedGames,
+        developerId: game.developerId.toString(),
 
-        gamesCount: updatedBuyer?.gamesCount,
-      });
+        amount: totalAmount,
 
-      console.log("💰 DEVELOPER EARNINGS:", {
-        developerId: developer._id.toString(),
+        developerShare,
 
-        pending: developerShare,
+        purchasedGames: updatedBuyer.purchasedGames,
+
+        gamesCount: updatedBuyer.gamesCount,
 
         availableAt,
       });
     }
 
     // =========================================================
-    // ORDER REFUNDED
+    // 4. ORDER REFUNDED
     // =========================================================
 
     if (eventName === "order_refunded") {
@@ -343,11 +319,9 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Faqat hali refund qilinmagan purchase
       const purchase = await Purchase.findOneAndUpdate(
         {
           lemonSqueezyOrderId: String(orderId),
-
           status: "paid",
         },
         {
@@ -360,31 +334,19 @@ export async function POST(req: NextRequest) {
         },
       );
 
-      // Purchase topilmasa:
-      // allaqachon refund qilingan yoki mavjud emas
       if (!purchase) {
-        console.log("⚠️ Refund purchase topilmadi:", orderId);
+        console.log("⚠️ Refund uchun Purchase topilmadi:", orderId);
 
         return NextResponse.json({
           received: true,
         });
       }
 
-      // =====================================================
-      // DEVELOPER BALANCE
-      // =====================================================
+      // =======================================================
+      // AGAR PUL HALI PENDING BO'LSA
+      // =======================================================
 
-      if (purchase.releasedAt) {
-        // Pul allaqachon availableBalance'ga o'tgan
-        await User.findByIdAndUpdate(purchase.developerId, {
-          $inc: {
-            availableBalance: -purchase.developerShare,
-
-            totalEarnings: -purchase.developerShare,
-          },
-        });
-      } else {
-        // Pul hali pendingBalance'da
+      if (!purchase.releasedAt) {
         await User.findByIdAndUpdate(purchase.developerId, {
           $inc: {
             pendingBalance: -purchase.developerShare,
@@ -394,9 +356,22 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // =====================================================
-      // BUYER PURCHASED GAMESDAN OLIB TASHLASH
-      // =====================================================
+      // =======================================================
+      // AGAR PUL AVAILABLE BALANCE'GA CHIQQAN BO'LSA
+      // =======================================================
+      else {
+        await User.findByIdAndUpdate(purchase.developerId, {
+          $inc: {
+            availableBalance: -purchase.developerShare,
+
+            totalEarnings: -purchase.developerShare,
+          },
+        });
+      }
+
+      // =======================================================
+      // BUYERDAN O'YINNI O'CHIRISH
+      // =======================================================
 
       await User.findByIdAndUpdate(purchase.buyerId, {
         $pull: {
@@ -409,8 +384,13 @@ export async function POST(req: NextRequest) {
       });
 
       console.log("🔄 REFUND PROCESSED:", {
-        orderId,
+        orderId: String(orderId),
+
         purchaseId: purchase._id.toString(),
+
+        buyerId: purchase.buyerId.toString(),
+
+        gameId: purchase.gameId.toString(),
 
         developerShare: purchase.developerShare,
 
@@ -419,7 +399,7 @@ export async function POST(req: NextRequest) {
     }
 
     // =========================================================
-    // RESPONSE
+    // 5. RESPONSE
     // =========================================================
 
     return NextResponse.json({
