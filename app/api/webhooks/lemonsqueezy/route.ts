@@ -216,7 +216,10 @@ export async function POST(req: NextRequest) {
           );
 
           purchase = await Purchase.findOne({
-            lemonSqueezyOrderId: String(orderId),
+            $or: [
+              { lemonSqueezyOrderId: String(orderId) },
+              { buyerId, gameId: game._id },
+            ],
           });
 
           if (!purchase) {
