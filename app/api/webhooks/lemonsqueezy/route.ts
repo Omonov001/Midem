@@ -208,42 +208,30 @@ export async function POST(req: NextRequest) {
           developerShare,
           availableAt,
         });
-      } catch (error) {
-        if (isDuplicateError(error)) {
-          console.log(
-            "⚠️ Duplicate order. Existing Purchase will be used:",
+      } catch (err: unknown) {
+        if (
+          typeof err === "object" &&
+          err !== null &&
+          "code" in err &&
+          (err as { code: number }).code === 11000
+        ) {
+          const e = err as {
+            keyPattern?: unknown;
+            keyValue?: unknown;
+          };
+
+          console.error("🔥 DUPLICATE INDEX:", {
+            keyPattern: e.keyPattern,
+            keyValue: e.keyValue,
             orderId,
-          );
-
-          purchase = await Purchase.findOne({
-            $or: [
-              { lemonSqueezyOrderId: String(orderId) },
-              { buyerId, gameId: game._id },
-            ],
+            buyerId,
+            gameId,
           });
 
-          if (!purchase) {
-            console.error(
-              "❌ Duplicate Purchase detected, but existing Purchase not found:",
-              orderId,
-            );
-
-            return NextResponse.json(
-              {
-                error:
-                  "Duplicate Purchase detected but existing Purchase not found",
-              },
-              { status: 500 },
-            );
-          }
-
-          console.log("♻️ EXISTING PURCHASE FOUND:", {
-            purchaseId: purchase._id.toString(),
-            orderId: String(orderId),
-          });
-        } else {
-          throw error;
+          return NextResponse.json({ received: true });
         }
+
+        throw err;
       }
 
       // =========================================================
