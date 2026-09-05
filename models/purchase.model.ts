@@ -7,15 +7,18 @@ export interface IPurchaseDocument extends Document {
 
   lemonSqueezyOrderId: string;
 
-  amount: number; // umumiy summa
+  amount: number;
   currency: string;
-  commission: number; // 20%
-  developerShare: number; // 80%
+  commission: number;
+  developerShare: number;
 
   status: "paid" | "refunded";
 
+  availableAt: Date;
+
   createdAt: Date;
   updatedAt: Date;
+  releasedAt?: Date | null;
 }
 
 const PurchaseSchema = new Schema<IPurchaseDocument>(
@@ -26,12 +29,14 @@ const PurchaseSchema = new Schema<IPurchaseDocument>(
       required: true,
       index: true,
     },
+
     gameId: {
       type: Schema.Types.ObjectId,
       ref: "Game",
       required: true,
       index: true,
     },
+
     developerId: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -46,10 +51,29 @@ const PurchaseSchema = new Schema<IPurchaseDocument>(
       index: true,
     },
 
-    amount: { type: Number, required: true, min: 0 },
-    currency: { type: String, required: true, uppercase: true },
-    commission: { type: Number, required: true },
-    developerShare: { type: Number, required: true },
+    amount: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    currency: {
+      type: String,
+      required: true,
+      uppercase: true,
+    },
+
+    commission: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    developerShare: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
 
     status: {
       type: String,
@@ -57,12 +81,27 @@ const PurchaseSchema = new Schema<IPurchaseDocument>(
       default: "paid",
       index: true,
     },
+
+    availableAt: {
+      type: Date,
+      required: true,
+      index: true,
+    },
+
+    releasedAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+  },
 );
 
 PurchaseSchema.index({ buyerId: 1, gameId: 1 }, { unique: true });
 
 const Purchase =
   models.Purchase || model<IPurchaseDocument>("Purchase", PurchaseSchema);
+
 export default Purchase;

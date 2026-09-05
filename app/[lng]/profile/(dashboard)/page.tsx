@@ -353,6 +353,9 @@ function Page() {
                     : t("premium.description") ||
                       "Eksklyuziv imkoniyatlar va pasaytirilgan platforma komissiyasi uchun Pro Pass'ni ishga tushiring."}
                 </p>
+                <p className="font-extrabold text-xl text-background">
+                  Faqat hozircha premium pass ishlamaydi
+                </p>
               </div>
             </div>
 

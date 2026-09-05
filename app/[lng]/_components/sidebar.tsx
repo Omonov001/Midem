@@ -9,16 +9,16 @@ import { usePathname } from "next/navigation";
 import { CgProfile } from "react-icons/cg";
 import useTranslate from "@/hooks/use-translate";
 
-// 1. Interfacega tashqaridan keladigan proplarni qo'shamiz
 interface SidebarProps {
   navItems: {
     label: string;
     href: string;
     icon: React.ReactNode;
+    disabled?: boolean;
   }[];
   title?: string;
-  isOpen: boolean; // Qo'shildi
-  setIsOpen: (open: boolean) => void; // Qo'shildi
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
 }
 
 function Sidebar({
@@ -27,7 +27,6 @@ function Sidebar({
   isOpen,
   setIsOpen,
 }: SidebarProps) {
-  // const [isOpen, setIsOpen] = useState(false); <-- Buni o'chirib tashladik
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme } = useTheme();
   const pathname = usePathname();
@@ -38,7 +37,7 @@ function Sidebar({
     setMounted(true);
   }, []);
 
-  // Sahifa o'zgarganda mobil menyu avtomatik yopilishi uchun
+  // Sahifa o'zgarganda mobil menyu avtomatik yopiladi
   useEffect(() => {
     setIsOpen(false);
   }, [pathname, setIsOpen]);
@@ -61,22 +60,60 @@ function Sidebar({
         )}
       >
         <div className="flex flex-col h-full p-4">
+          {/* HEADER */}
           <div className="flex items-center gap-3 px-4 py-4">
             <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white">
               <CgProfile size={24} />
             </div>
+
             <span className="font-bold text-xl tracking-tight uppercase italic">
               {t(title)}
             </span>
           </div>
 
+          {/* NAVIGATION */}
           <nav className="flex-1 space-y-2 overflow-y-auto">
             {navItems.map((item) => {
+              /*
+               * Disabled item hech qachon active bo'lmaydi.
+               */
               const isActive =
-                pathname === item.href ||
-                pathname.startsWith(`${item.href}/`) ||
-                (pathname.length > 3 && pathname.substring(3) === item.href);
+                !item.disabled &&
+                (pathname === item.href ||
+                  pathname.startsWith(`${item.href}/`) ||
+                  (pathname.length > 3 && pathname.substring(3) === item.href));
 
+              /*
+               * DISABLED ITEM
+               */
+              if (item.disabled) {
+                return (
+                  <div
+                    key={item.href}
+                    aria-disabled="true"
+                    className={cn(
+                      "group relative flex items-center gap-4 px-4 py-3.5 rounded-xl font-bold",
+                      "text-slate-400 dark:text-slate-600",
+                      "opacity-50 cursor-not-allowed select-none",
+                    )}
+                  >
+                    <div className="text-slate-400 dark:text-slate-600">
+                      {item.icon}
+                    </div>
+
+                    <span className="text-[14px]">{t(item.label)}</span>
+
+                    {/* COMING SOON */}
+                    <span className="ml-auto text-[8px] uppercase tracking-wider font-black px-2 py-1 rounded-md bg-slate-200 dark:bg-white/5 text-slate-400 dark:text-slate-500">
+                      Soon
+                    </span>
+                  </div>
+                );
+              }
+
+              /*
+               * NORMAL ACTIVE LINK
+               */
               return (
                 <Link
                   key={item.href}
@@ -91,23 +128,28 @@ function Sidebar({
                   {isActive && (
                     <div className="absolute inset-0 rounded-xl bg-blue-400 blur-[20px] opacity-60 z-[-1] animate-pulse" />
                   )}
+
                   {isActive && (
                     <div className="absolute left-0 top-3 bottom-3 w-1 bg-white rounded-r-full shadow-[0_0_15px_#fff]" />
                   )}
+
                   <div
                     className={cn(isActive ? "text-white" : "text-blue-500")}
                   >
                     {item.icon}
                   </div>
+
                   <span className="text-[14px] z-10">{t(item.label)}</span>
                 </Link>
               );
             })}
           </nav>
 
+          {/* LOGOUT */}
           <div className="pt-4 mt-auto border-t border-slate-200 dark:border-white/5">
             <button className="flex items-center gap-4 w-full p-3.5 rounded-xl font-bold text-red-500 hover:bg-red-500/5 transition-all">
               <LogOut size={20} />
+
               <span className="text-sm uppercase tracking-wider">
                 {t("logout")}
               </span>
@@ -120,7 +162,7 @@ function Sidebar({
       {isOpen && (
         <div
           className="fixed inset-0 z-[95] bg-black/40 md:hidden"
-          onClick={() => setIsOpen(false)} // Bosilganda yopadi
+          onClick={() => setIsOpen(false)}
         />
       )}
     </>

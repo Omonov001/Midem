@@ -32,6 +32,10 @@ export interface IUser extends Document {
   // Ban holati
   isBanned: boolean;
 
+  availableBalance: number;
+  pendingBalance: number;
+  totalEarnings: number;
+
   // Oxirgi faollik
   lastSeen: Date;
 
@@ -139,6 +143,24 @@ const UserSchema = new Schema<IUser>(
       type: Boolean,
       default: false,
       index: true,
+    },
+
+    availableBalance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    pendingBalance: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    totalEarnings: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
 
     // USER OXIRGI FAOLLIGI

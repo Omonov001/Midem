@@ -34,36 +34,49 @@ export const profileMenuItems = [
     label: "dashboard",
     href: "/profile",
     icon: React.createElement(LayoutDashboard, { size: 22 }),
+    disabled: false,
   },
+
   {
     label: "account",
     href: "/profile/account",
     icon: React.createElement(User, { size: 22 }),
+    disabled: false,
   },
+
   {
     label: "myGames",
     href: "/profile/myGames",
     icon: React.createElement(CgGames, { size: 22 }),
+    disabled: false,
   },
+
   {
     label: "notifications",
     href: "/profile/notifications",
     icon: React.createElement(BiNotification, { size: 22 }),
+    disabled: false,
   },
+
   {
     label: "myReviews",
     href: "/profile/myReviews",
     icon: React.createElement(MdReviews, { size: 22 }),
+    disabled: true,
   },
+
   {
     label: "cart",
     href: "/profile/cart",
     icon: React.createElement(CreditCardIcon, { size: 22 }),
+    disabled: true,
   },
+
   {
     label: "settings",
     href: "/profile/settings",
     icon: React.createElement(Settings, { size: 22 }),
+    disabled: false,
   },
 ];
 

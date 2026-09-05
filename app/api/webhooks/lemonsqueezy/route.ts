@@ -5,12 +5,37 @@ import Game from "@/models/game.model";
 import Purchase from "@/models/purchase.model";
 import User from "@/models/user.model";
 
+function calculateAvailableAt(createdAt: Date) {
+  const date = new Date(createdAt);
+
+  // Lemon Squeezy 13 kunlik hold
+  date.setDate(date.getDate() + 13);
+
+  // Keyingi payout sanasi: 14 yoki 28
+  const day = date.getDate();
+
+  if (day <= 14) {
+    date.setDate(14);
+  } else if (day <= 28) {
+    date.setDate(28);
+  } else {
+    date.setMonth(date.getMonth() + 1);
+    date.setDate(14);
+  }
+
+  // Payoutdan keyin bankka kelishi uchun maksimal 5 kun
+  date.setDate(date.getDate() + 5);
+
+  return date;
+}
+
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
 
-  // 1. Signature tekshirish — soxta so'rovlarni bloklaydi
+  // Signature tekshirish
   const signature = req.headers.get("x-signature") ?? "";
   const secret = process.env.LEMONSQUEEZY_WEBHOOK_SECRET!;
+
   const hmac = crypto.createHmac("sha256", secret);
   const digest = hmac.update(rawBody).digest("hex");
 
@@ -27,6 +52,10 @@ export async function POST(req: NextRequest) {
 
   await connectToDatabase();
 
+  // =========================================================
+  // ORDER CREATED
+  // =========================================================
+
   if (eventName === "order_created") {
     const order = payload.data.attributes;
     const orderId = payload.data.id;
@@ -39,6 +68,7 @@ export async function POST(req: NextRequest) {
         "Missing custom_data in webhook",
         payload.meta?.custom_data,
       );
+
       return NextResponse.json(
         { error: "Missing custom_data" },
         { status: 400 },
@@ -46,17 +76,22 @@ export async function POST(req: NextRequest) {
     }
 
     const game = await Game.findById(gameId);
+
     if (!game) {
       return NextResponse.json({ error: "Game not found" }, { status: 404 });
     }
 
-    const totalAmount = order.total / 100; // sentdan dollarga
+    const totalAmount = order.total / 100;
     const currency = order.currency;
+
     const commission = +(totalAmount * 0.2).toFixed(2);
     const developerShare = +(totalAmount * 0.8).toFixed(2);
 
+    const createdAt = new Date();
+    const availableAt = calculateAvailableAt(createdAt);
+
     try {
-      // Xuddi shu order ikki marta yozilmasligi uchun unique index himoya qiladi
+      // Purchase yaratish
       await Purchase.create({
         buyerId,
         gameId,
@@ -67,20 +102,29 @@ export async function POST(req: NextRequest) {
         commission,
         developerShare,
         status: "paid",
+        availableAt,
       });
 
-      // Developer balansini oshirish
+      // Developer earnings
+      // Hali available emas -> pending
       await User.findByIdAndUpdate(game.developerId, {
-        $inc: { balance: developerShare },
+        $inc: {
+          pendingBalance: developerShare,
+          totalEarnings: developerShare,
+        },
       });
 
-      // Xaridorning "sotib olingan o'yinlar" ro'yxatiga qo'shish
+      // Xaridorning sotib olingan o'yinlariga qo'shish
       await User.findByIdAndUpdate(buyerId, {
-        $addToSet: { purchasedGames: gameId },
-        $inc: { gamesCount: 1 },
+        $addToSet: {
+          purchasedGames: gameId,
+        },
+        $inc: {
+          gamesCount: 1,
+        },
       });
     } catch (err: unknown) {
-      // Agar duplicate order kelsa (Lemon Squeezy webhookni qayta yuborishi mumkin)
+      // Duplicate webhook
       if (
         typeof err === "object" &&
         err !== null &&
@@ -88,32 +132,58 @@ export async function POST(req: NextRequest) {
         (err as { code: number }).code === 11000
       ) {
         console.log("Duplicate order, ignoring:", orderId);
-        return NextResponse.json({ received: true });
+
+        return NextResponse.json({
+          received: true,
+        });
       }
-      throw err;
+
+      console.error("Webhook order_created error:", err);
+
+      return NextResponse.json(
+        { error: "Webhook processing failed" },
+        { status: 500 },
+      );
     }
   }
+
+  // =========================================================
+  // ORDER REFUNDED
+  // =========================================================
 
   if (eventName === "order_refunded") {
     const orderId = payload.data.id;
+
     const purchase = await Purchase.findOneAndUpdate(
-      { lemonSqueezyOrderId: orderId },
-      { status: "refunded" },
+      {
+        lemonSqueezyOrderId: orderId,
+        status: "paid",
+      },
+      {
+        status: "refunded",
+      },
     );
 
     if (purchase) {
-      // Developer balansidan ayirib qo'yamiz
       await User.findByIdAndUpdate(purchase.developerId, {
-        $inc: { balance: -purchase.developerShare },
+        $inc: {
+          pendingBalance: -purchase.developerShare,
+          totalEarnings: -purchase.developerShare,
+        },
       });
 
-      // Xaridorning ro'yxatidan olib tashlaymiz
       await User.findByIdAndUpdate(purchase.buyerId, {
-        $pull: { purchasedGames: purchase.gameId },
-        $inc: { gamesCount: -1 },
+        $pull: {
+          purchasedGames: purchase.gameId,
+        },
+        $inc: {
+          gamesCount: -1,
+        },
       });
     }
   }
 
-  return NextResponse.json({ received: true });
+  return NextResponse.json({
+    received: true,
+  });
 }

@@ -2,6 +2,58 @@ import User from "@/models/user.model";
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongoose";
 import mongoose from "mongoose";
+import { currentUser } from "@clerk/nextjs/server";
+
+// 🟢 GET METODI — joriy foydalanuvchi o'z ma'lumotini olishi uchun
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const clerkUser = await currentUser();
+    if (!clerkUser) {
+      return NextResponse.json(
+        { error: "Tizimga kirmagansiz" },
+        { status: 401 },
+      );
+    }
+
+    await connectToDatabase();
+
+    const { id } = await params;
+
+    const filter = mongoose.Types.ObjectId.isValid(id)
+      ? { _id: id }
+      : { clerkId: id };
+
+    const user = await User.findOne(filter).select(
+      "name email balance availableBalance pendingBalance totalEarnings role clerkId",
+    );
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Foydalanuvchi topilmadi" },
+        { status: 404 },
+      );
+    }
+
+    // Faqat o'zining ma'lumotini ko'rishi mumkin
+    if (user.clerkId !== clerkUser.id) {
+      return NextResponse.json({ error: "Ruxsat yo'q" }, { status: 403 });
+    }
+
+    return NextResponse.json({
+      ...user.toObject(),
+      id: user._id.toString(),
+    });
+  } catch (error) {
+    console.error("GET /api/user/[id] xatosi:", error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Xatolik yuz berdi" },
+      { status: 500 },
+    );
+  }
+}
 
 export async function PATCH(
   req: Request,
