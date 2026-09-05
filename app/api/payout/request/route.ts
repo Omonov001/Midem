@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
 import { connectToDatabase } from "@/lib/mongoose";
 import User from "@/models/user.model";
-import Payout from "@/models/Payout";
+import Payout from "@/models/payout.model";
 
 const MIN_PAYOUT = 20;
 
