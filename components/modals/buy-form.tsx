@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ui/theme-provider";
 import {
@@ -26,6 +27,8 @@ export default function BuyFormModal({
 }: BuyFormModalProps) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+
+  const { userId } = useAuth();
 
   const [loading, setLoading] = useState(false);
 
@@ -72,7 +75,14 @@ export default function BuyFormModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget && !loading) {
+          onClose();
+        }
+      }}
+    >
       <div
         className={cn(
           "w-full max-w-md p-6 sm:p-8 rounded-3xl shadow-2xl border relative flex flex-col gap-6 animate-in zoom-in-95 duration-200",
@@ -121,7 +131,9 @@ export default function BuyFormModal({
                 Narx
               </p>
 
-              <p className="text-lg font-black text-emerald-500">{gamePrice}</p>
+              <p className="text-lg font-black text-emerald-500">
+                {gamePrice}$
+              </p>
             </div>
           </div>
         </div>
@@ -151,29 +163,37 @@ export default function BuyFormModal({
         </div>
 
         {/* CHECKOUT BUTTON */}
-        <button
-          type="button"
-          onClick={handleCheckout}
-          disabled={loading}
-          className={cn(
-            "w-full py-4 px-6 rounded-xl font-black text-xs uppercase italic shadow-lg flex items-center justify-center gap-2 transition-all text-white",
-            loading
-              ? "bg-slate-600 opacity-70 cursor-not-allowed"
-              : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 active:scale-95 cursor-pointer",
+        <div className="space-y-2">
+          <button
+            type="button"
+            onClick={handleCheckout}
+            disabled={loading || !userId}
+            className={cn(
+              "w-full py-4 px-6 rounded-xl font-black text-xs uppercase italic shadow-lg flex items-center justify-center gap-2 transition-all text-white",
+              loading || !userId
+                ? "bg-slate-600 opacity-50 cursor-not-allowed"
+                : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:brightness-110 active:scale-95 cursor-pointer",
+            )}
+          >
+            {loading ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Yonaltirilmoqda...
+              </>
+            ) : (
+              <>
+                <IoCardOutline size={18} />
+                Tolovga otish ({gamePrice}$)
+              </>
+            )}
+          </button>
+
+          {!userId && (
+            <p className="text-xs text-center font-bold text-amber-500">
+              Avval royxatdan oting
+            </p>
           )}
-        >
-          {loading ? (
-            <>
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Yonaltirilmoqda...
-            </>
-          ) : (
-            <>
-              <IoCardOutline size={18} />
-              Tolovga otish ({gamePrice})
-            </>
-          )}
-        </button>
+        </div>
 
         <p className="text-[9px] text-center uppercase tracking-wider opacity-40 font-bold">
           TEST MODE

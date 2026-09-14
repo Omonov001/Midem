@@ -592,7 +592,7 @@ export default function PCGameDetail({ params }: PageProps) {
               <IoDownloadOutline className="text-lg" />
 
               {game.priceType === "paid" && !game.userHasBought
-                ? `Sotib olish (${game.price || "—"})`
+                ? `Sotib olish (${game.price || "—"}$)`
                 : "Yuklab olish bo‘limiga o'tish"}
             </button>
           </div>
@@ -831,7 +831,7 @@ export default function PCGameDetail({ params }: PageProps) {
                           Yuklanmoqda...
                         </span>
                       ) : game.priceType === "paid" && !game.userHasBought ? (
-                        <span>Sotib olish ({game.price || "—"})</span>
+                        <span>Sotib olish ({game.price || "—"}$)</span>
                       ) : (
                         <span className="flex items-center gap-1.5">
                           <IoDownloadOutline className="text-base" />
