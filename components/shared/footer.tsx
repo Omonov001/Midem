@@ -26,10 +26,26 @@ function Footer() {
   const isDark = resolvedTheme === "dark";
 
   const socialLinks = [
-    { icon: BsYoutube, href: "#", color: "hover:bg-red-600" },
-    { icon: BsTelegram, href: "#", color: "hover:bg-blue-400" },
-    { icon: SiRoblox, href: "#", color: "hover:bg-blue-700" },
-    { icon: BsInstagram, href: "#", color: "hover:bg-pink-600" },
+    {
+      icon: BsYoutube,
+      href: "https://www.youtube.com/@Midem_Studio",
+      color: "hover:bg-red-600",
+    },
+    {
+      icon: BsTelegram,
+      href: "https://t.me/MidemRobuxServis",
+      color: "hover:bg-blue-400",
+    },
+    {
+      icon: SiRoblox,
+      href: "roblox.com/games/105729771895633/Uzbekhaven-chat",
+      color: "hover:bg-blue-700",
+    },
+    {
+      icon: BsInstagram,
+      href: "https://www.instagram.com/midem__/",
+      color: "hover:bg-pink-600",
+    },
   ];
 
   return (
@@ -59,6 +75,7 @@ function Footer() {
             <div className="flex items-center gap-3">
               {socialLinks.map((social, idx) => (
                 <Link
+                  target="_blank"
                   key={idx}
                   href={social.href}
                   className={cn(

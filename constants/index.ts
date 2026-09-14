@@ -85,41 +85,49 @@ export const developerMenuItems = [
     label: "dashboard",
     href: "/developer",
     icon: React.createElement(LayoutDashboard, { size: 22 }),
+    disabled: false,
   },
   {
     label: "myGames",
     href: "/developer/my-games",
     icon: React.createElement(User, { size: 22 }),
+    disabled: false,
   },
   {
     label: "myNews",
     href: "/developer/my-news",
     icon: React.createElement(CgGames, { size: 22 }),
+    disabled: false,
   },
   {
     label: "createGame",
     href: "/developer/create-games",
     icon: React.createElement(BiNotification, { size: 22 }),
+    disabled: false,
   },
   {
     label: "createNew",
     href: "/developer/create-news",
     icon: React.createElement(MdReviews, { size: 22 }),
+    disabled: false,
   },
   {
     label: "myGamesReviews",
     href: "/developer/my-games-reviews",
     icon: React.createElement(CreditCardIcon, { size: 22 }),
+    disabled: true,
   },
   {
     label: "myNewsReviews",
     href: "/developer/my-news-reviews",
     icon: React.createElement(CreditCardIcon, { size: 22 }),
+    disabled: true,
   },
   {
     label: "userRequests",
     href: "/developer/userRequests",
     icon: React.createElement(User, { size: 22 }),
+    disabled: false,
   },
 ];
 export const adminMenuItems = [

@@ -22,7 +22,13 @@ import Link from "next/link";
 
 const RANK_CONFIG: Record<
   UserRank,
-  { label: string; color: string; bg: string; border: string; icon: string }
+  {
+    label: string;
+    color: string;
+    bg: string;
+    border: string;
+    icon: string;
+  }
 > = {
   bronze: {
     label: "BRONZE",
@@ -61,26 +67,33 @@ const RANK_CONFIG: Record<
   },
 };
 
-// Vaqtni dinamik formatlash funksiyasi
-function formatTimeAgo(dateString?: Date | string) {
-  if (!dateString) return "Yaqinda";
-  const date = new Date(dateString);
-  const now = new Date();
-  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-  if (diffInSeconds < 60) return "Hozirgina";
-  const diffInMinutes = Math.floor(diffInSeconds / 60);
-  if (diffInMinutes < 60) return `${diffInMinutes} daqiqa oldin`;
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `${diffInHours} soat oldin`;
-  const diffInDays = Math.floor(diffInHours / 24);
-  return `${diffInDays} kun oldin`;
-}
+type PurchasedGame = {
+  _id: string;
+  langData?: {
+    uz?: {
+      title?: string;
+      iconPreview?: string | null;
+    };
+    ru?: {
+      title?: string;
+      iconPreview?: string | null;
+    };
+    en?: {
+      title?: string;
+      iconPreview?: string | null;
+    };
+    tr?: {
+      title?: string;
+      iconPreview?: string | null;
+    };
+  };
+};
 
 function Page() {
   const t = useTranslations();
+
   const [userData, setUserData] = useState<IUser | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
@@ -102,6 +115,7 @@ function Page() {
       <div className="w-full min-h-[80vh] flex items-center justify-center p-6">
         <div className="flex flex-col items-center gap-4 text-slate-400 animate-pulse">
           <Loader2 size={40} className="animate-spin text-blue-600" />
+
           <p className="font-semibold text-xs tracking-widest uppercase">
             {t("loading") || "Yuklanmoqda..."}
           </p>
@@ -111,6 +125,7 @@ function Page() {
   }
 
   const currentRank = userData?.rank || "bronze";
+
   const rankStyle = RANK_CONFIG[currentRank] || RANK_CONFIG.bronze;
 
   const avatarUrl =
@@ -118,6 +133,35 @@ function Page() {
     `https://ui-avatars.com/api/?name=${encodeURIComponent(
       userData?.name || "User",
     )}&background=2563eb&color=fff`;
+
+  // =========================================================
+  // OXIRGI SOTIB OLINGAN O'YIN
+  // =========================================================
+
+  const purchasedGames =
+    (userData?.purchasedGames as unknown as PurchasedGame[]) || [];
+
+  const lastGame = purchasedGames.at(-1);
+
+  const hasPurchasedGame = Boolean(lastGame);
+
+  const lastGameTitle =
+    lastGame?.langData?.uz?.title ||
+    lastGame?.langData?.en?.title ||
+    lastGame?.langData?.ru?.title ||
+    lastGame?.langData?.tr?.title ||
+    "O'yinlar yo'q";
+
+  const lastGameImage =
+    lastGame?.langData?.uz?.iconPreview ||
+    lastGame?.langData?.en?.iconPreview ||
+    lastGame?.langData?.ru?.iconPreview ||
+    lastGame?.langData?.tr?.iconPreview ||
+    "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000";
+
+  // =========================================================
+  // STATS
+  // =========================================================
 
   const stats = [
     {
@@ -155,21 +199,11 @@ function Page() {
     },
   ];
 
-  // Dinamik oxirgi o'yin ma'lumotlari
-  const hasPlayedGame = Boolean(userData?.lastPlayedGame?.title);
-  const lastGameTitle = userData?.lastPlayedGame?.title || "O'yinlar yo'q";
-  const lastGameImage =
-    userData?.lastPlayedGame?.image ||
-    "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000";
-  const lastPlayedFormattedTime = formatTimeAgo(
-    userData?.lastPlayedGame?.lastPlayedAt,
-  );
-
   return (
     <div className="w-full min-w-0 p-4 py-6 my-10 sm:p-6 lg:p-8 space-y-8 animate-in fade-in duration-300">
-      {/* --- HEADER BLOCK --- */}
+      {/* HEADER */}
+
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-6 rounded-3xl bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-slate-200/80 dark:border-white/10 shadow-xl shadow-black/5 w-full">
-        {/* User Info & Avatar */}
         <div className="flex items-center gap-4 sm:gap-5 min-w-0 w-full">
           <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden ring-4 ring-blue-600/20 shrink-0 shadow-lg bg-slate-800">
             <Image
@@ -190,29 +224,34 @@ function Page() {
                 {userData?.name || userData?.username || "Gamer"}
               </span>
             </h1>
+
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1.5">
               <Zap
                 size={14}
                 className="text-amber-500 fill-amber-500 shrink-0"
               />
+
               <span>{t("subtitle") || "O'yinlar va natijalar markazi"}</span>
             </p>
           </div>
         </div>
 
-        {/* Level & Rank Badge */}
+        {/* RANK */}
+
         <div className="flex items-center justify-between lg:justify-end gap-4 pt-4 lg:pt-0 border-t lg:border-t-0 border-slate-200/60 dark:border-white/5 shrink-0">
           <div className="text-left lg:text-right space-y-0.5">
             <span className="text-[10px] font-bold text-slate-400 tracking-wider uppercase whitespace-nowrap">
               {t("level") || "DARAJA"} {userData?.level || 1}
             </span>
+
             <p
               className={cn(
                 "text-base sm:text-lg font-black tracking-tight uppercase flex items-center gap-1.5 whitespace-nowrap",
                 rankStyle.color,
               )}
             >
-              <Crown size={16} /> {rankStyle.label}
+              <Crown size={16} />
+              {rankStyle.label}
             </p>
           </div>
 
@@ -234,7 +273,8 @@ function Page() {
         </div>
       </div>
 
-      {/* --- STATS GRID --- */}
+      {/* STATS */}
+
       <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
         {stats.map((stat, i) => (
           <div
@@ -245,6 +285,7 @@ function Page() {
               <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                 {t(`stats.${stat.key}`) || stat.key}
               </span>
+
               <div
                 className={cn(
                   "p-2.5 rounded-2xl transition-transform group-hover:scale-110",
@@ -260,6 +301,7 @@ function Page() {
               <h3 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                 {stat.value}
               </h3>
+
               {stat.unit && (
                 <span className="text-xs font-bold text-slate-400">
                   {stat.unit}
@@ -270,14 +312,17 @@ function Page() {
         ))}
       </div>
 
-      {/* --- CONTENT SECTION --- */}
+      {/* CONTENT */}
+
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 w-full">
-        {/* Banner Card - DINAMIK OXIRGI O'YIN */}
+        {/* LAST PURCHASED GAME */}
+
         <div className="xl:col-span-2 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
               <TrendingUp size={16} className="text-blue-600" />
-              {t("last_game") || "Oxirgi faollik"}
+
+              {t("last_game") || "Oxirgi o'yin"}
             </h2>
           </div>
 
@@ -289,47 +334,57 @@ function Page() {
               unoptimized
               className="object-cover transition-transform duration-700 group-hover:scale-105 opacity-80"
             />
+
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
 
             <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between gap-4">
               <div className="space-y-1.5 max-w-md">
-                <Link href={"/games"}>
+                <Link href="/games">
                   <span className="px-2.5 py-1 bg-blue-600/90 backdrop-blur-md text-white text-[10px] font-extrabold uppercase tracking-widest rounded-lg inline-flex items-center gap-1">
                     <Sparkles size={11} />
-                    {hasPlayedGame
+
+                    {hasPurchasedGame
                       ? t("continue") || "Davom ettirish"
                       : "Yangi boshlash"}
                   </span>
                 </Link>
+
                 <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-none">
                   {lastGameTitle}
                 </h3>
+
                 <p className="text-slate-300 font-medium text-xs">
-                  {hasPlayedGame
-                    ? `${t("last_game") || "Oxirgi marta"}: ${lastPlayedFormattedTime}`
-                    : "Hali birorta ham o'yin o'ynalmagan"}
+                  {hasPurchasedGame
+                    ? "Sotib olingan oxirgi o'yin"
+                    : "Hali birorta ham o'yin sotib olinmagan"}
                 </p>
               </div>
 
-              {hasPlayedGame && (
-                <button className="w-12 h-12 rounded-2xl bg-white text-blue-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-xl shrink-0">
+              {hasPurchasedGame && (
+                <Link
+                  href="/games"
+                  className="w-12 h-12 rounded-2xl bg-white text-blue-600 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shadow-xl shrink-0"
+                >
                   <Play fill="currentColor" size={18} className="ml-0.5" />
-                </button>
+                </Link>
               )}
             </div>
           </div>
         </div>
 
-        {/* Pro Pass Info Side Block */}
+        {/* PREMIUM */}
+
         <div className="space-y-3 flex flex-col justify-between">
           <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
             <Zap size={16} className="text-amber-500" />
+
             {t("info_title") || "Obuna holati"}
           </h2>
 
           <div
             className={cn(
               "rounded-3xl p-6 text-white relative overflow-hidden shadow-xl flex-1 flex flex-col justify-between group transition-all border",
+
               userData?.isPremium
                 ? "bg-gradient-to-br from-amber-600 via-amber-500 to-yellow-600 border-amber-400/30"
                 : "bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-700 border-blue-400/30",
@@ -353,6 +408,7 @@ function Page() {
                     : t("premium.description") ||
                       "Eksklyuziv imkoniyatlar va pasaytirilgan platforma komissiyasi uchun Pro Pass'ni ishga tushiring."}
                 </p>
+
                 <p className="font-extrabold text-xl text-background">
                   Faqat hozircha premium pass ishlamaydi
                 </p>

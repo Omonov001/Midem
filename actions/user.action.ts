@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
 import { connectToDatabase } from "@/lib/mongoose";
@@ -13,14 +14,16 @@ export async function getUserData(): Promise<IUser | null> {
 
     await connectToDatabase();
 
-    const dbUser = await User.findOne({ clerkId: clerkUser.id });
+    const dbUser = await User.findOne({
+      clerkId: clerkUser.id,
+    }).populate("purchasedGames");
 
     if (!dbUser) return null;
 
-    // Next.js Server Action JSON formatiga o'tkazish uchun parse qilamiz
     return JSON.parse(JSON.stringify(dbUser));
   } catch (error) {
     console.error("User ma'lumotlarini olishda xatolik:", error);
+
     return null;
   }
 }
@@ -32,7 +35,6 @@ interface UpdateUserParams {
 
 export async function updateUserData(params: UpdateUserParams) {
   try {
-    // 1. Clerk orqali joriy foydalanuvchini tekshirish
     const { userId } = await auth();
 
     if (!userId) {
@@ -42,12 +44,10 @@ export async function updateUserData(params: UpdateUserParams) {
       };
     }
 
-    // 2. Baza bilan ulanish
     await connectToDatabase();
 
     const { name, username } = params;
 
-    // 3. Username band emasligini tekshirish (o'zidan tashqari boshqa user ishlatmayotgan bo'lsin)
     const existingUsername = await User.findOne({
       username,
       clerkId: { $ne: userId },
@@ -60,11 +60,17 @@ export async function updateUserData(params: UpdateUserParams) {
       };
     }
 
-    // 4. Ma'lumotlarni bazada yangilash
     const updatedUser = await User.findOneAndUpdate(
       { clerkId: userId },
-      { $set: { name, username } },
-      { new: true },
+      {
+        $set: {
+          name,
+          username,
+        },
+      },
+      {
+        new: true,
+      },
     );
 
     if (!updatedUser) {
@@ -74,7 +80,6 @@ export async function updateUserData(params: UpdateUserParams) {
       };
     }
 
-    // 5. Account va Dashboard sahifalaridagi keshni yangilash
     revalidatePath("/account");
     revalidatePath("/dashboard");
 
@@ -82,9 +87,9 @@ export async function updateUserData(params: UpdateUserParams) {
       success: true,
       data: JSON.parse(JSON.stringify(updatedUser)),
     };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (error: any) {
     console.error("updateUserData actionida xatolik:", error);
+
     return {
       success: false,
       error: error.message || "Serverda kutilmagan xatolik yuz berdi.",
@@ -97,19 +102,22 @@ export async function deleteUserAccount() {
     const { userId } = await auth();
 
     if (!userId) {
-      return { success: false, error: "Ruxsat berilmagan" };
+      return {
+        success: false,
+        error: "Ruxsat berilmagan",
+      };
     }
 
-    // 1. Clerk'dan foydalanuvchini o'chiramiz
-    // (U o'chishi bilan Clerk avtomatcha sizning Webhook'ingizga "user.deleted" yuboradi
-    // va Webhook MongoDB'dan ham o'chirib beradi!)
     const client = await clerkClient();
+
     await client.users.deleteUser(userId);
 
-    return { success: true };
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return {
+      success: true,
+    };
   } catch (error: any) {
     console.error("deleteUserAccount xatolik:", error);
+
     return {
       success: false,
       error: error.message || "Hisobni o'chirishda xatolik",

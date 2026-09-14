@@ -46,7 +46,7 @@ export default function CommentModal({
       {/* Overlay */}
       <div
         className={cn(
-          "fixed inset-0 z-[100] bg-black/60 h-full backdrop-blur-sm transition-opacity duration-300",
+          "fixed inset-0 z-[100] bg-slate-950/60 h-full backdrop-blur-sm transition-opacity duration-300",
           isOpen
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none",
@@ -59,7 +59,7 @@ export default function CommentModal({
         className={cn(
           "fixed top-0 right-0 z-[101] h-full w-full max-w-md p-8 transition-transform duration-500 ease-out shadow-2xl",
           isDark
-            ? "bg-[#0b0e14] border-l border-white/10 text-slate-300"
+            ? "bg-slate-950/60 border-l border-white/10 text-slate-300"
             : "bg-white border-l border-slate-200 text-slate-900",
           isOpen ? "translate-x-0" : "translate-x-full",
         )}
@@ -70,6 +70,7 @@ export default function CommentModal({
             <h2 className="text-3xl font-black uppercase italic tracking-tighter">
               {t("thoughts")}
             </h2>
+
             <button
               onClick={onClose}
               className={cn(
@@ -81,7 +82,7 @@ export default function CommentModal({
             </button>
           </div>
 
-          {/* RATING SELECTION SECTION (Interaktiv yulduzlar) */}
+          {/* RATING SELECTION SECTION */}
           <div
             className={cn(
               "p-6 rounded-[2rem] mb-8 border transition-all",
@@ -93,6 +94,7 @@ export default function CommentModal({
             <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-4 opacity-50 text-center">
               {t("YourRate")}
             </p>
+
             <div className="flex justify-center gap-3">
               {[1, 2, 3, 4, 5].map((s) => (
                 <button
@@ -115,6 +117,7 @@ export default function CommentModal({
                 </button>
               ))}
             </div>
+
             {rating > 0 && (
               <p className="mt-4 text-center text-xs font-bold text-orange-500 uppercase tracking-widest animate-pulse">
                 {t("YourChoice")}: {rating} {t("score")}!
@@ -125,13 +128,21 @@ export default function CommentModal({
           {/* Comments List */}
           <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4 mb-6">
             {[
-              { u: "Admin", t: "O'yin vapshe bomba gap yo'q!", r: 5 },
+              {
+                u: "Admin",
+                t: "O'yin vapshe bomba gap yo'q!",
+                r: 5,
+              },
               {
                 u: "Gamer99",
                 t: "Grafika sal kuchsizroq, lekin gameplay daxshat.",
                 r: 4,
               },
-              { u: "UZ_Master", t: "Kutganimdan ham yaxshi chiqdi.", r: 5 },
+              {
+                u: "UZ_Master",
+                t: "Kutganimdan ham yaxshi chiqdi.",
+                r: 5,
+              },
             ].map((comment, idx) => (
               <div
                 key={idx}
@@ -146,8 +157,10 @@ export default function CommentModal({
                   <span className="font-bold text-sm tracking-tight">
                     {comment.u}
                   </span>
+
                   <StarRatingStatic value={comment.r} />
                 </div>
+
                 <p className="text-xs opacity-70 italic leading-relaxed">
                   {comment.t}
                 </p>
@@ -168,6 +181,7 @@ export default function CommentModal({
                     : "bg-slate-100 border-slate-300 focus:border-blue-600 focus:bg-white shadow-inner",
                 )}
               />
+
               <button
                 className={cn(
                   "absolute right-3 top-3 p-3 text-white rounded-xl transition-all active:scale-90",
@@ -180,9 +194,36 @@ export default function CommentModal({
                 <IoSend size={20} />
               </button>
             </div>
+
             <p className="text-[9px] mt-3 text-center opacity-40 font-bold uppercase tracking-widest">
               {t("CommentText")}
             </p>
+          </div>
+        </div>
+
+        {/* 🚧 SOON OVERLAY */}
+        <div
+          className={cn(
+            "absolute inset-0 z-50 flex items-center justify-center backdrop-blur-md transition-opacity duration-300",
+            isDark ? "bg-black/40" : "bg-white/40",
+            isOpen
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none",
+          )}
+          onClick={onClose}
+        >
+          {/* SOON content */}
+          <div
+            className="flex flex-col items-center gap-2 select-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="text-5xl font-black italic tracking-tighter">
+              SOON
+            </span>
+
+            <span className="text-xs font-bold uppercase tracking-[0.3em] opacity-50">
+              {t("ComingSoon") || "Coming Soon"}
+            </span>
           </div>
         </div>
       </div>
@@ -191,10 +232,12 @@ export default function CommentModal({
         .custom-scrollbar::-webkit-scrollbar {
           width: 4px;
         }
+
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: rgba(59, 130, 246, 0.2);
           border-radius: 10px;
         }
+
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: rgba(59, 130, 246, 0.5);
         }

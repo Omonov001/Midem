@@ -91,7 +91,7 @@ export default function EditGameForm({ gameSlug }: { gameSlug: string }) {
   const [selectedOS, setSelectedOS] = useState<Record<string, boolean>>({});
   const [osDetails, setOsDetails] = useState<Record<string, IOSDetail>>({});
   const [priceType, setPriceType] = useState<"free" | "paid">("free");
-  const [price, setPrice] = useState<string>("0$");
+  const [price, setPrice] = useState<number>(0);
 
   // =========================
   // PAYOUT CARDS
@@ -156,7 +156,7 @@ export default function EditGameForm({ gameSlug }: { gameSlug: string }) {
         setSelectedOS(data.selectedOS || {});
         setOsDetails(data.osDetails || {});
         setPriceType(data.priceType || "free");
-        setPrice(data.price || "0$");
+        setPrice(data.price || 0);
         setTechData(
           data.techData || {
             version: "",
@@ -387,7 +387,7 @@ export default function EditGameForm({ gameSlug }: { gameSlug: string }) {
         selectedOS,
         osDetails: updatedOsDetails,
         priceType,
-        price: priceType === "paid" ? price : "0$",
+        price: priceType === "paid" ? price : 0,
         payoutCardId: priceType === "paid" ? selectedCardId : null,
         techData,
         langData,
@@ -1059,9 +1059,14 @@ export default function EditGameForm({ gameSlug }: { gameSlug: string }) {
                     Narxi ($)
                   </label>
                   <input
-                    type="text"
+                    type="number"
+                    min="0"
+                    step="0.01"
                     value={price}
-                    onChange={(e) => setPrice(e.target.value)}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setPrice(value === "" ? 0 : Number(value));
+                    }}
                     className={inputClass}
                   />
                 </div>

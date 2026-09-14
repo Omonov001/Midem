@@ -95,7 +95,7 @@ export async function POST(req: Request) {
 
       slug,
       priceType: priceType || "free",
-      price: priceType === "paid" ? price : "0$",
+      price: priceType === "paid" ? Number(price) : 0,
 
       // Developerning haqiqiy MongoDB ID'si
       developerId: mongoUser._id,

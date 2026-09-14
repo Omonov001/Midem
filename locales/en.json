@@ -3,45 +3,55 @@
   "navLink2": "News",
   "navLink3": "Games",
   "navLink4": "Contact",
-  "manageAccount": "Manage Account",
-  "logout": "Logout",
+
+  "manageAccount": "Manage Profile",
+  "logout": "Log Out",
   "signUp": "Sign Up",
-  "logIn": "Login",
-  "HomeText": "The best games",
+  "logIn": "Log In",
+
+  "HomeText": "The games",
   "HomeText2": "you've been waiting for",
   "HomeText3": "feel the real adrenaline.",
   "PlayNow": "Play Now",
-  "SeeNews": "View News",
+  "SeeNews": "See News",
+
   "news": "News",
   "games": "Games",
   "contact": "Contact",
   "search": "Search",
   "searchResults": "Search Results",
+
   "Admins": "Admins",
   "All": "All",
-  "TheBestOnes": "Top Rated",
+  "TheBestOnes": "Best",
   "TheNewestOnes": "Newest",
   "TheOldestOnes": "Oldest",
-  "FooterText": "Enjoy the best and most entertaining games through our platform. Stay updated with the latest gaming world news first.",
+
+  "FooterText": "Enjoy the best and most entertaining games through our platform. Stay among the first to follow the latest news from the gaming world with us.",
   "FooterText2": "Gaming Zone. ALL RIGHTS RESERVED.",
   "FooterText3": "Privacy Policy",
   "FooterText4": "Terms of Use",
+
   "MainText": "Welcome to the World of Games",
   "MainText2": "Welcome to the News Section",
   "MainText3": "Welcome to the Games Section",
   "MainText4": "Welcome to the Contact Section",
-  "newsText": "Follow the latest changes, updates, and exclusive information from our gaming universe right here.",
+
+  "newsText": "Follow the latest changes, updates, and exclusive information from our gaming world right here.",
   "back": "Back",
   "update": "Update",
   "comment": "Comments",
-  "newsLastText": "Stay with us and follow the news. More exciting updates are waiting for you in the future.",
-  "GamesText": "Choose your preferred platform",
+
+  "newsLastText": "Stay with us and keep up with the latest news. Even more exciting and fresh updates are waiting for you in the future.",
+
+  "GamesText": "Choose the games you want",
   "PCGames": "PC Games",
   "PCGamesText": "The most enjoyable games",
   "MobileGames": "Mobile Games",
-  "MobileGamesText": "Anywhere, anytime",
+  "MobileGamesText": "Anytime, anywhere",
   "SeeAll": "See All",
-  "Top": "Top",
+
+  "Top": "top",
   "GameName": "Game Name",
   "Dowload": "Download",
   "PC": "PC",
@@ -50,99 +60,139 @@
   "loaded": "Downloaded",
   "Reviews": "Reviews",
   "uploaded": "Uploaded",
-  "category": "category",
-  "Release": "Release",
+  "category": "Category",
+
+  "Release": "Released",
   "Developer": "Developer",
-  "AboutGame": "About Game",
+  "AboutGame": "About the Game",
   "SystemRequirements": "System Requirements",
   "User": "User",
   "useful": "Useful",
   "GamePlayPreview": "Gameplay Preview",
-  "NewUpdated": "New in Update",
+
+  "NewUpdated": "In the New Update",
   "version": "Version",
-  "GameData": "In-game Info",
+  "GameData": "Game Information",
   "ReleaseDate": "Release Date",
   "DowloadSize": "Download Size",
   "language": "Language",
-  "FullData": "Full Technical Data",
-  "ContactUs": "Contact",
-  "ContactUs2": " Us",
-  "ContactText": "Have questions? Write to us, and we will reply soon.",
+  "FullData": "Full Technical Information",
+
+  "ContactUs": "Get in",
+  "ContactUs2": " touch",
+  "ContactText": "Have any questions? Write to us and we'll get back to you soon.",
+
   "Email": "Email",
   "Address": "Address",
   "YourName": "Your Name",
-  "YourEmailAddress": "Your Email Address",
-  "WriteYourMessage": "Write your message",
-  "SendAMessage": "Send Message",
-  "IsBeingSent": "sending",
+  "YourEmailAddress": "Your Telegram username",
+  "WriteYourMessage": "Write Your Message",
+  "SendAMessage": "Send a Message",
+  "IsBeingSent": "is being sent",
+
   "Profile": "Profile",
   "Owner": "Owner",
-  "AdminPanel": "Admin Panel",
+  "AdminPanel": "Administrator Panel",
   "settings": "Settings",
   "MyAccount": "My Account",
   "thoughts": "Thoughts",
-  "YourRate": "How would you rate this game?",
+
+  "YourRate": "How would you rate the game?",
   "WriteYourOpinion": "Write your opinion",
-  "CommentText": "Leave your feedback based on Vertex Platform Rules",
+  "CommentText": "Leave your feedback according to Vertex Platform Rules",
   "YourChoice": "Your Choice",
   "score": "score",
+
   "views": "Views",
   "likes": "Likes",
   "account": "Account",
   "dashboard": "Dashboard",
   "notifications": "Notifications",
+
   "myGames": "My Games",
   "myReviews": "My Reviews",
   "cart": "Cart",
+
   "play": "Play",
   "buy": "Buy",
   "allRemove": "Remove All",
+
   "creditCards": "Credit Cards",
   "addNew": "Add New",
   "delete": "Delete",
   "edit": "Edit",
   "save": "Save",
   "cancel": "Cancel",
+
   "name": "Name",
   "email": "Email",
   "phone": "Phone",
   "password": "Password",
   "confirmPassword": "Confirm Password",
+
   "register": "Register",
-  "login": "Login",
-  "forgotPassword": "Forgot Password?",
+  "login": "Log In",
+  "forgotPassword": "Forgot your password?",
+
   "myCreditCards": "My Credit Cards",
-  "newCardData": "New Credit Card Info",
-  "cardNumber": "Card Number",
-  "cardHolder": "Card Holder",
+  "newCardData": "New Credit Card Information",
+  "cardNumber": "Credit Card Number",
+  "cardHolder": "Cardholder",
   "expirationDate": "Expiration Date",
-  "addCard": "Add Card",
-  "addNewCard": "Add New Card",
+  "addCard": "Add Credit Card",
+  "addNewCard": "Add New Credit Card",
+
   "shutdown": "Close",
   "fnln": "Full Name",
+
   "notificationDescription": "Information about new achievements",
+
   "DarkMode": "Dark Mode",
-  "DarkModeDesc": "Saves your eyes in dark environments",
+  "DarkModeDesc": "Dark mode is easier on the eyes",
   "LightMode": "Light Mode",
   "LightModeDesc": "Maximum brightness",
   "InterFaceSettings": "Interface Settings",
+
   "welcome": "Welcome,",
-  "subtitle": "Time to set new records today",
+  "subtitle": "It's time to set new records today",
   "level": "Your Level",
   "rank": "Pro Gamer",
+
   "stats": {
     "balance": "Total Spent",
     "games": "Games",
     "achievements": "Achievements",
-    "playtime": "Play Time"
+    "playtime": "Playtime"
   },
+
   "activity": "Recent Activity",
   "continue": "Continue",
-  "last_played": "Last played",
+  "last_played": "Last Played",
+
   "premium": {
     "title": "Premium Pass",
-    "description": "Get up to 20% discount on all games!",
+    "description": "Get up to 20% off on all games!",
     "button": "Upgrade Now"
   },
-  "info_title": "Information"
+
+  "info_title": "Information",
+
+  "myNews": "My News",
+  "myGamesReviews": "My Game Reviews",
+  "myNewsReviews": "My News Reviews",
+
+  "createGame": "Create Game",
+  "createNew": "Create News",
+  "see": "View",
+
+  "last_game": "Latest Game",
+  "list": "List",
+  "requests": "Requests",
+  "userRequests": "User Requests",
+
+  "loading": "Loading...",
+  "ComingSoon": "Coming Soon",
+  "common": {
+    "loading": "Loading..."
+  }
 }

@@ -8,44 +8,46 @@ interface Props {
   one: string;
   two: string;
   three: string;
-  four: string;
   className?: string;
-  onSelect?: (filterText: string) => void;
+  onSelect?: (filter: "all" | "newest" | "oldest") => void;
 }
 
-function FillterCards({ one, two, three, four, className, onSelect }: Props) {
-  const [selected, setSelected] = useState<string>(one);
+function FillterCards({ one, two, three, className, onSelect }: Props) {
+  const [selected, setSelected] = useState<"all" | "newest" | "oldest">("all");
 
-  const handleSelect = (text: string) => {
-    setSelected(text);
-    if (onSelect) {
-      onSelect(text);
-    }
+  const buttons = [
+    { text: one, value: "all" as const },
+    { text: two, value: "newest" as const },
+    { text: three, value: "oldest" as const },
+  ];
+
+  const handleSelect = (value: "all" | "newest" | "oldest") => {
+    setSelected(value);
+    onSelect?.(value);
   };
-
-  const buttons = [one, two, three, four];
 
   return (
     <div
       className={cn(
         className,
-        "w-full h-auto gap-2 flex items-center justify-center md:justify-end-safe flex-wrap",
+        "flex h-auto w-full flex-wrap items-center justify-center gap-2 md:justify-end",
       )}
     >
-      {buttons.map((btnText, index) => {
-        const isActive = selected === btnText;
+      {buttons.map((button) => {
+        const isActive = selected === button.value;
+
         return (
           <Button
-            key={index}
-            onClick={() => handleSelect(btnText)}
+            key={button.value}
+            onClick={() => handleSelect(button.value)}
             className={cn(
-              "cursor-pointer border-2 transition-all font-bold px-5 py-2 rounded-xl active:scale-95",
+              "cursor-pointer rounded-xl border-2 px-5 py-2 font-bold transition-all active:scale-95",
               isActive
-                ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/30"
+                ? "border-blue-600 bg-blue-600 text-white shadow-lg shadow-blue-600/30"
                 : "border-blue-600 bg-transparent text-blue-600 hover:bg-blue-600/10",
             )}
           >
-            {btnText}
+            {button.text}
           </Button>
         );
       })}

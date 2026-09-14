@@ -72,7 +72,7 @@ function Sidebar({
           </div>
 
           {/* NAVIGATION */}
-          <nav className="flex-1 space-y-2 overflow-y-auto">
+          <nav className="sidebar-scroll flex-1 space-y-2 overflow-y-auto pr-1">
             {navItems.map((item) => {
               /*
                * Disabled item hech qachon active bo'lmaydi.

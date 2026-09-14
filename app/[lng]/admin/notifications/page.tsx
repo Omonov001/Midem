@@ -107,7 +107,13 @@ export default function NotificationsPage() {
   // =======================================================
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+
+  // Initial page loading
   const [isLoading, setIsLoading] = useState(true);
+
+  // Refresh loading — listni o'chirmaydi
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // =======================================================
@@ -313,9 +319,26 @@ export default function NotificationsPage() {
   // FETCH NOTIFICATIONS
   // =======================================================
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = async (refresh = false) => {
     try {
-      setIsLoading(true);
+      /*
+       * IMPORTANT:
+       *
+       * Initial load:
+       *   isLoading = true
+       *
+       * Refresh:
+       *   isRefreshing = true
+       *
+       * Refresh paytida notification list o'chirilmaydi.
+       */
+
+      if (refresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
+
       setErrorMessage(null);
 
       /*
@@ -341,6 +364,12 @@ export default function NotificationsPage() {
         );
       }
 
+      /*
+       * Yangi notificationlar shu yerda state'ga tushadi.
+       *
+       * Refresh paytida eski list o'chib ketmaydi.
+       * API javobi kelgandan keyin birdaniga yangi listga o'tadi.
+       */
       setNotifications(
         Array.isArray(data.notifications) ? data.notifications : [],
       );
@@ -353,9 +382,20 @@ export default function NotificationsPage() {
           : "Notificationlarni olishda xatolik yuz berdi",
       );
 
-      setNotifications([]);
+      /*
+       * Initial loadingda xatolik bo'lsa listni bo'shatamiz.
+       *
+       * Refreshda esa mavjud notificationlarni saqlab qolamiz.
+       */
+      if (!refresh) {
+        setNotifications([]);
+      }
     } finally {
-      setIsLoading(false);
+      if (refresh) {
+        setIsRefreshing(false);
+      } else {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -365,7 +405,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchNotifications();
+    fetchNotifications(false);
   }, []);
 
   // =======================================================
@@ -719,7 +759,7 @@ export default function NotificationsPage() {
   };
 
   // =======================================================
-  // LOADING
+  // INITIAL LOADING ONLY
   // =======================================================
 
   if (isLoading) {
@@ -796,11 +836,11 @@ export default function NotificationsPage() {
         className="sticky top-[100px] z-40 bg-white/95 dark:bg-slate-950/95 backdrop-blur-md py-4 border-b border-slate-100 dark:border-slate-900/40 space-y-4"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-indigo-500" />
+          <div className="flex items-center gap-2 min-w-0">
+            <Bell className="w-8 h-8 text-indigo-500 shrink-0" />
 
-            <div>
-              <h1 className="text-lg font-black tracking-tight text-slate-950 dark:text-white uppercase">
+            <div className="min-w-0">
+              <h1 className="text-lg font-black tracking-tight text-slate-950 dark:text-white uppercase truncate">
                 Notifications Control
               </h1>
 
@@ -810,24 +850,71 @@ export default function NotificationsPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 self-end sm:self-auto">
+          <div className="flex items-center gap-3 self-end sm:self-auto shrink-0">
             <div className="flex items-center gap-2 text-[11px] font-bold bg-slate-100 dark:bg-slate-900/50 p-1.5 rounded-xl border border-slate-200/10">
               <span className="px-2 py-0.5 rounded-lg bg-indigo-600 text-white shadow-sm">
                 Jami: {stats.total}
               </span>
             </div>
 
+            {/* =================================================
+                REFRESH BUTTON
+            ================================================== */}
+
             <button
               type="button"
-              onClick={fetchNotifications}
-              disabled={isLoading}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black rounded-xl bg-indigo-500/10 text-indigo-500 hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-50"
+              onClick={() => fetchNotifications(true)}
+              disabled={isRefreshing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-black rounded-xl bg-indigo-500/10 text-indigo-500 hover:bg-indigo-600 hover:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Notificationlarni yangilash"
             >
-              <RefreshCw className="w-3 h-3" />
-              Yangilash
+              <RefreshCw
+                className={`w-3 h-3 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+
+              <span>{isRefreshing ? "Yangilanmoqda..." : "Yangilash"}</span>
             </button>
           </div>
         </div>
+
+        {/* =================================================
+            REFRESH PROGRESS
+        ================================================== */}
+
+        <AnimatePresence>
+          {isRefreshing && (
+            <motion.div
+              initial={{
+                opacity: 0,
+                height: 0,
+              }}
+              animate={{
+                opacity: 1,
+                height: 2,
+              }}
+              exit={{
+                opacity: 0,
+                height: 0,
+              }}
+              className="w-full overflow-hidden rounded-full bg-indigo-500/10"
+            >
+              <motion.div
+                initial={{
+                  x: "-100%",
+                }}
+                animate={{
+                  x: "100%",
+                }}
+                transition={{
+                  duration: 1,
+                  repeat: Infinity,
+                  ease: "linear",
+                }}
+                className="h-full w-1/3 bg-indigo-500 rounded-full"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* =================================================
             STATISTICS
@@ -990,10 +1077,15 @@ export default function NotificationsPage() {
 
             <button
               type="button"
-              onClick={fetchNotifications}
-              className="mt-4 px-4 py-2 text-xs font-black rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all"
+              onClick={() => fetchNotifications(true)}
+              disabled={isRefreshing}
+              className="mt-4 inline-flex items-center gap-2 px-4 py-2 text-xs font-black rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Qayta urinish
+              <RefreshCw
+                className={`w-3.5 h-3.5 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+
+              {isRefreshing ? "Yangilanmoqda..." : "Qayta urinish"}
             </button>
           </div>
         ) : filteredNotifications.length > 0 ? (
@@ -1005,6 +1097,7 @@ export default function NotificationsPage() {
           >
             {filteredNotifications.map((notification) => {
               const title = getTitle(notification);
+
               const message = getMessage(notification);
 
               const currentType = typeMap[notification.type] || typeMap.system;

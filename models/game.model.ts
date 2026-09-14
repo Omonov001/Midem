@@ -51,6 +51,8 @@ export interface IGameDocument extends Document {
   price: number;
   lemonSqueezyVariantId?: string;
 
+  gameDownloads: number; // 👈 yangi
+
   payoutCardId?: Schema.Types.ObjectId | null;
 
   techData: ITechnicalDetails;
@@ -175,6 +177,11 @@ const GameSchema = new Schema<IGameDocument>(
       ref: "Card",
       default: null,
       index: true,
+    },
+    gameDownloads: {
+      type: Number,
+      default: 0,
+      min: 0,
     },
   },
   {

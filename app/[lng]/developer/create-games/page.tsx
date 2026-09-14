@@ -577,7 +577,7 @@ export default function CreateGamePage() {
 
         priceType,
 
-        price: priceType === "paid" ? price : "0$",
+        price: priceType === "paid" ? Number(price) : 0,
 
         // MUHIM:
         // Endi karta malumotlari yuborilmaydi.

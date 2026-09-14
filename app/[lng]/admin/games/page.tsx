@@ -23,6 +23,7 @@ import {
   Trash2,
   AlertTriangle,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { IGameDocument, LanguageType } from "@/models/game.model";
@@ -55,41 +56,33 @@ export default function MyGamesPage() {
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchDeveloperGames = async () => {
+    try {
+      setLoading(true);
+      setError(null);
 
-    async function fetchDeveloperGames() {
-      try {
-        setLoading(true);
-        const res = await fetch("/api/admin/games");
+      const res = await fetch("/api/admin/games");
 
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          throw new Error(
-            errorData.message || "Oyinlarni bazadan yuklab bolmadi",
-          );
-        }
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
 
-        const data = await res.json();
-        if (isMounted) {
-          setGamesList(data);
-        }
-      } catch (err: any) {
-        if (isMounted) {
-          setError(err.message || "Xatolik roy berdi");
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        throw new Error(
+          errorData.message || "Oyinlarni bazadan yuklab bolmadi",
+        );
       }
+
+      const data = await res.json();
+      setGamesList(data);
+    } catch (err: any) {
+      setError(err.message || "Xatolik roy berdi");
+    } finally {
+      setLoading(false);
     }
+  };
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDeveloperGames();
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
   // 🛡️ OCHIRISH BOYICHA ISHLOVCHI
@@ -268,16 +261,51 @@ export default function MyGamesPage() {
             <Gamepad2 className="text-blue-600 dark:text-blue-400" size={32} />
             Hamma Oyinlar
           </h1>
+
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
             Midem platformasidagi barcha oyinlar
           </p>
         </div>
-        <Link
-          href="/developer/create-games"
-          className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
+
+        <button
+          type="button"
+          onClick={fetchDeveloperGames}
+          disabled={loading}
+          className="
+      inline-flex
+      items-center
+      justify-center
+      gap-2
+      px-4
+      py-2.5
+      rounded-xl
+      border
+      border-slate-200
+      dark:border-white/10
+      bg-white
+      dark:bg-white/5
+      text-slate-700
+      dark:text-slate-300
+      hover:text-blue-600
+      dark:hover:text-blue-400
+      hover:border-blue-300
+      dark:hover:border-blue-500/30
+      hover:bg-blue-50
+      dark:hover:bg-blue-500/10
+      transition-all
+      cursor-pointer
+      disabled:opacity-50
+      disabled:cursor-not-allowed
+      shrink-0
+      self-start
+      sm:self-auto
+    "
+          title="Oyinlar royxatini yangilash"
         >
-          <Plus size={18} /> Yangi oyin loyihasi
-        </Link>
+          <RefreshCw size={16} className={cn(loading && "animate-spin")} />
+
+          <span className="text-xs font-bold">Yangilash</span>
+        </button>
       </div>
 
       {/* FILTRLAR VA QIDIRUV */}
@@ -437,7 +465,7 @@ export default function MyGamesPage() {
                       )}
                     >
                       <Coins size={11} />
-                      {game.priceType === "free" ? "Tekin" : game.price}
+                      {game.priceType === "free" ? "Tekin" : `${game.price}$`}
                     </span>
                   </div>
                 </div>
@@ -476,13 +504,6 @@ export default function MyGamesPage() {
 
                   {/* TAHRIRLASH VA OCHIRISH TUGMALARI */}
                   <div className="pt-3 border-t border-slate-100 dark:border-white/5 flex gap-2">
-                    <Link
-                      href={`/developer/my-games/${game.slug}`}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-blue-50 hover:text-blue-600 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-blue-500/10 dark:hover:text-blue-400 transition-all text-center"
-                    >
-                      <Pencil size={14} /> Tahrirlash
-                    </Link>
-
                     <button
                       type="button"
                       onClick={() => openDeleteModal(game)}

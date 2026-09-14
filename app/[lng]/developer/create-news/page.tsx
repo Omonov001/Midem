@@ -339,9 +339,9 @@ export default function CreateNewsPage() {
       {/* FORMA */}
       <form
         onSubmit={handleSubmit}
-        className="grid gap-6 lg:grid-cols-3 items-start"
+        className="grid gap-6 lg:grid-cols-3 items-start sidebar-scroll overflow-y-auto"
       >
-        <div className="lg:col-span-2 space-y-6 p-6 sm:p-8 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-100/50 dark:shadow-none">
+        <div className="lg:col-span-2 min-w-0 space-y-6 p-6 sm:p-8 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-100/50 dark:shadow-none">
           <div className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-500/10 px-3 py-1.5 rounded-xl w-fit">
             Kiritilayotgan til:{" "}
             {LANGUAGES.find((l) => l.code === activeLang)?.label}

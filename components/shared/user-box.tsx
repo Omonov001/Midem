@@ -40,6 +40,12 @@ import {
 
 function UserBox() {
   const [mounted, setMounted] = useState(false);
+
+  // ✅ FAQAT ROLE UCHUN QO'SHILDI
+  const [role, setRole] = useState<"user" | "admin" | "owner" | "developer">(
+    "user",
+  );
+
   const { theme } = useTheme();
   const t = useTranslate();
   const { lng } = useParams();
@@ -53,6 +59,44 @@ function UserBox() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
+
+  // ✅ USER ROLE'NI MONGODB'DAN OLISH
+  useEffect(() => {
+    if (!user?.id || !isSignedIn) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setRole("user");
+      return;
+    }
+
+    const getRole = async () => {
+      try {
+        const res = await fetch(`/api/users/${user.id}`);
+
+        if (!res.ok) {
+          setRole("user");
+          return;
+        }
+
+        const data = await res.json();
+
+        if (
+          data.role === "user" ||
+          data.role === "admin" ||
+          data.role === "owner" ||
+          data.role === "developer"
+        ) {
+          setRole(data.role);
+        } else {
+          setRole("user");
+        }
+      } catch (error) {
+        console.error("User role olishda xatolik:", error);
+        setRole("user");
+      }
+    };
+
+    getRole();
+  }, [user?.id, isSignedIn]);
 
   if (!mounted) return <div className="size-10" />;
 
@@ -165,50 +209,59 @@ function UserBox() {
                 </DropdownMenuItem>
               </Link>
 
-              <Link href={`/${lng}/owner`}>
-                <DropdownMenuItem
-                  className={cn(
-                    "group flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all outline-none",
-                    isDark
-                      ? "focus:bg-indigo-500/10"
-                      : "focus:bg-indigo-50 hover:bg-indigo-50/50",
-                  )}
-                >
-                  <Crown className="size-4 text-indigo-500" />
-                  <span className="flex-1 font-black italic bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500">
-                    {t("Owner")}
-                  </span>
-                  <div className="size-2 rounded-full bg-indigo-500 shadow-[0_0_8px_#6366f1] group-hover:animate-ping" />
-                </DropdownMenuItem>
-              </Link>
+              {/* ✅ FAQAT OWNER KO'RADI */}
+              {role === "owner" && (
+                <Link href={`/${lng}/owner`}>
+                  <DropdownMenuItem
+                    className={cn(
+                      "group flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all outline-none",
+                      isDark
+                        ? "focus:bg-indigo-500/10"
+                        : "focus:bg-indigo-50 hover:bg-indigo-50/50",
+                    )}
+                  >
+                    <Crown className="size-4 text-indigo-500" />
+                    <span className="flex-1 font-black italic bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-purple-500">
+                      {t("Owner")}
+                    </span>
+                    <div className="size-2 rounded-full bg-indigo-500 shadow-[0_0_8px_#6366f1] group-hover:animate-ping" />
+                  </DropdownMenuItem>
+                </Link>
+              )}
 
-              <Link href={`/${lng}/admin`}>
-                <DropdownMenuItem
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors focus:bg-emerald-500/10 focus:text-emerald-600 outline-none",
-                    !isDark && "hover:bg-slate-50",
-                  )}
-                >
-                  <ShieldCheck className="size-4 text-emerald-500" />
-                  <span className="flex-1 text-emerald-500 font-bold italic">
-                    {t("AdminPanel")}
-                  </span>
-                </DropdownMenuItem>
-              </Link>
+              {/* ✅ FAQAT ADMIN KO'RADI */}
+              {role === "admin" && (
+                <Link href={`/${lng}/admin`}>
+                  <DropdownMenuItem
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors focus:bg-emerald-500/10 focus:text-emerald-600 outline-none",
+                      !isDark && "hover:bg-slate-50",
+                    )}
+                  >
+                    <ShieldCheck className="size-4 text-emerald-500" />
+                    <span className="flex-1 text-emerald-500 font-bold italic">
+                      {t("AdminPanel")}
+                    </span>
+                  </DropdownMenuItem>
+                </Link>
+              )}
 
-              <Link href={`/${lng}/developer`}>
-                <DropdownMenuItem
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors focus:bg-blue-500/10 focus:text-blue-600 outline-none",
-                    !isDark && "hover:bg-slate-50",
-                  )}
-                >
-                  <MdDeveloperBoard className="size-4 text-amber-300" />
-                  <span className="flex-1 text-amber-300 font-bold italic">
-                    {t("Developer")}
-                  </span>
-                </DropdownMenuItem>
-              </Link>
+              {/* ✅ FAQAT DEVELOPER KO'RADI */}
+              {role === "developer" && (
+                <Link href={`/${lng}/developer`}>
+                  <DropdownMenuItem
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors focus:bg-blue-500/10 focus:text-blue-600 outline-none",
+                      !isDark && "hover:bg-slate-50",
+                    )}
+                  >
+                    <MdDeveloperBoard className="size-4 text-amber-300" />
+                    <span className="flex-1 text-amber-300 font-bold italic">
+                      {t("Developer")}
+                    </span>
+                  </DropdownMenuItem>
+                </Link>
+              )}
 
               <Link href={`/${lng}/profile/settings`}>
                 <DropdownMenuItem

@@ -17,6 +17,7 @@ import {
   Smartphone,
   AlertTriangle,
   Loader2,
+  RefreshCw,
 } from "lucide-react";
 
 import NotificationModal, {
@@ -45,7 +46,11 @@ const containerVariants: Variants = {
 };
 
 const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: {
+    opacity: 0,
+    y: 20,
+  },
+
   show: {
     opacity: 1,
     y: 0,
@@ -55,17 +60,22 @@ const cardVariants: Variants = {
       damping: 20,
     },
   },
+
   exit: {
     opacity: 0,
     scale: 0.95,
     y: 10,
-    transition: { duration: 0.15 },
+    transition: {
+      duration: 0.15,
+    },
   },
 };
 
 export default function NewsRequests() {
   const [activeTab, setActiveTab] = useState<TabType>("all");
+
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
   const [newsRequests, setNewsRequests] = useState<any[]>([]);
   const [gameRequests, setGameRequests] = useState<any[]>([]);
@@ -74,11 +84,18 @@ export default function NewsRequests() {
   // FETCH REQUESTS
   // =========================================================
 
-  const fetchRequests = async () => {
+  const fetchRequests = async (refresh = false) => {
     try {
-      setIsLoading(true);
+      if (refresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
 
-      const res = await fetch("/api/admin/requests");
+      const res = await fetch("/api/admin/requests", {
+        method: "GET",
+        cache: "no-store",
+      });
 
       if (!res.ok) {
         throw new Error("Requests API error");
@@ -93,7 +110,11 @@ export default function NewsRequests() {
     } catch (error) {
       console.error("Sorovlarni yuklashda xatolik:", error);
     } finally {
-      setIsLoading(false);
+      if (refresh) {
+        setIsRefreshing(false);
+      } else {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -185,6 +206,7 @@ export default function NewsRequests() {
 
       return {
         id: game._id || game.id,
+
         slug: game.slug,
 
         title:
@@ -264,6 +286,10 @@ export default function NewsRequests() {
     });
   };
 
+  // =========================================================
+  // CLOSE CONFIRM
+  // =========================================================
+
   const closeConfirm = () => {
     setConfirmModal({
       isOpen: false,
@@ -288,6 +314,7 @@ export default function NewsRequests() {
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
           targetId: selectedItem.id,
 
@@ -311,10 +338,7 @@ export default function NewsRequests() {
           );
         }
 
-        // ===================================================
-        // OPEN NEW DYNAMIC NOTIFICATION MODAL
-        // ===================================================
-
+        // Open notification modal
         setNotifState({
           isOpen: true,
           item: selectedItem,
@@ -342,16 +366,6 @@ export default function NewsRequests() {
 
   // =========================================================
   // NOTIFICATION SUBMIT
-  // =========================================================
-  //
-  // MUHIM:
-  // NotificationModal yangi system orqali
-  // /api/notifications ga yuboradi.
-  //
-  // Bu callback faqat parent state'ni yopadi.
-  //
-  // Eski /api/admin/send-notification
-  // BU YERDA ISHLATILMAYDI.
   // =========================================================
 
   const handleNotificationSubmit = (_payload: NotificationPayload) => {
@@ -423,16 +437,18 @@ export default function NewsRequests() {
   // =========================================================
 
   return (
-    <div className="w-full my-14 min-h-screen p-0 text-slate-800 dark:text-slate-100 transition-colors duration-200 overflow-hidden">
-      {/* HEADER */}
+    <div className="w-full my-14 max-md:my-18 min-h-screen p-0 text-slate-800 dark:text-slate-100 transition-colors duration-200 overflow-hidden">
+      {/* =====================================================
+          HEADER
+      ===================================================== */}
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6">
         <div>
           <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
               Kelib Tushgan Sorovlar
             </h2>
-
-            <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
           </div>
 
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
@@ -440,9 +456,70 @@ export default function NewsRequests() {
             royxati.
           </p>
         </div>
+
+        {/* =================================================
+            REFRESH BUTTON
+        ================================================= */}
+
+        <motion.button
+          whileTap={{
+            scale: 0.95,
+          }}
+          whileHover={{
+            y: -1,
+          }}
+          onClick={() => fetchRequests(true)}
+          disabled={isRefreshing || isLoading}
+          className="
+            group
+            inline-flex
+            items-center
+            justify-center
+            gap-2
+            px-4
+            py-2.5
+            rounded-xl
+            text-xs
+            font-black
+            border
+            border-slate-200
+            bg-white
+            text-slate-700
+            shadow-sm
+            transition-all
+            duration-200
+            hover:border-indigo-200
+            hover:bg-indigo-50
+            hover:text-indigo-600
+            hover:shadow-md
+            disabled:cursor-not-allowed
+            disabled:opacity-60
+            dark:border-slate-800
+            dark:bg-slate-900/70
+            dark:text-slate-200
+            dark:hover:border-indigo-500/30
+            dark:hover:bg-indigo-500/10
+            dark:hover:text-indigo-400
+          "
+          title="Sorovlarni yangilash"
+        >
+          <RefreshCw
+            className={`
+              w-4 h-4
+              transition-transform
+              duration-500
+              ${isRefreshing ? "animate-spin" : "group-hover:rotate-180"}
+            `}
+          />
+
+          <span>{isRefreshing ? "Yangilanmoqda..." : "Yangilash"}</span>
+        </motion.button>
       </div>
 
-      {/* TABS */}
+      {/* =====================================================
+          TABS
+      ===================================================== */}
+
       <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/60 p-1 rounded-xl w-fit mb-6 overflow-x-auto">
         <button
           onClick={() => setActiveTab("all")}
@@ -454,6 +531,12 @@ export default function NewsRequests() {
         >
           <Layers className="w-3.5 h-3.5" />
           <span>Barchasi</span>
+
+          {combinedRequests.length > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 rounded-md text-[9px] bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300">
+              {combinedRequests.length}
+            </span>
+          )}
         </button>
 
         <button
@@ -466,6 +549,12 @@ export default function NewsRequests() {
         >
           <Newspaper className="w-3.5 h-3.5" />
           <span>Yangiliklar</span>
+
+          {newsRequests.length > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 rounded-md text-[9px] bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300">
+              {newsRequests.length}
+            </span>
+          )}
         </button>
 
         <button
@@ -478,10 +567,19 @@ export default function NewsRequests() {
         >
           <Gamepad2 className="w-3.5 h-3.5" />
           <span>Oyinlar</span>
+
+          {gameRequests.length > 0 && (
+            <span className="ml-1 px-1.5 py-0.5 rounded-md text-[9px] bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300">
+              {gameRequests.length}
+            </span>
+          )}
         </button>
       </div>
 
-      {/* REQUEST CARDS */}
+      {/* =====================================================
+          REQUEST CARDS
+      ===================================================== */}
+
       {isLoading ? (
         <div className="py-20 flex flex-col items-center justify-center text-slate-400">
           <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mb-2" />
@@ -504,7 +602,26 @@ export default function NewsRequests() {
                   variants={cardVariants}
                   layout="position"
                   exit="exit"
-                  className="group relative flex flex-col justify-between p-5 rounded-2xl bg-white dark:bg-slate-900/40 hover:bg-slate-100/60 dark:hover:bg-slate-900/80 transition-all duration-200 border border-slate-100/80 dark:border-slate-900/40"
+                  className="
+                      group
+                      relative
+                      flex
+                      flex-col
+                      justify-between
+                      p-5
+                      rounded-2xl
+                      bg-white
+                      dark:bg-slate-900/40
+                      hover:bg-slate-100/60
+                      dark:hover:bg-slate-900/80
+                      transition-all
+                      duration-200
+                      border
+                      border-slate-100/80
+                      dark:border-slate-900/40
+                      shadow-sm
+                      hover:shadow-md
+                    "
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-3">
@@ -536,6 +653,7 @@ export default function NewsRequests() {
 
                       <span className="flex items-center gap-1 text-[11px] font-medium text-slate-400 dark:text-slate-500">
                         <Calendar className="w-3.5 h-3.5" />
+
                         {item.createdAt.slice(0, 10)}
                       </span>
                     </div>
@@ -559,7 +677,27 @@ export default function NewsRequests() {
                   <div className="flex items-center justify-between gap-3 pt-4 mt-4 border-t border-slate-100 dark:border-slate-900/40">
                     <Link
                       href={item.detailUrl}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-lg bg-slate-100 text-slate-700 hover:bg-indigo-50 hover:text-indigo-600 dark:bg-slate-800/80 dark:text-slate-200 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-400 transition-all duration-150 active:scale-95"
+                      className="
+                          inline-flex
+                          items-center
+                          gap-1.5
+                          px-3.5
+                          py-1.5
+                          text-xs
+                          font-bold
+                          rounded-lg
+                          bg-slate-100
+                          text-slate-700
+                          hover:bg-indigo-50
+                          hover:text-indigo-600
+                          dark:bg-slate-800/80
+                          dark:text-slate-200
+                          dark:hover:bg-indigo-950/40
+                          dark:hover:text-indigo-400
+                          transition-all
+                          duration-150
+                          active:scale-95
+                        "
                     >
                       <Eye className="w-3.5 h-3.5" />
                       Batafsil
@@ -567,6 +705,7 @@ export default function NewsRequests() {
 
                     <div className="flex items-center gap-2">
                       {/* REJECT */}
+
                       <button
                         onClick={() =>
                           openConfirm(
@@ -578,13 +717,25 @@ export default function NewsRequests() {
                             item.developerUsername,
                           )
                         }
-                        className="p-1.5 sm:p-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-xl transition-all duration-150 active:scale-95"
+                        className="
+                            p-1.5
+                            sm:p-2
+                            bg-rose-500/10
+                            hover:bg-rose-500/20
+                            text-rose-500
+                            rounded-xl
+                            transition-all
+                            duration-150
+                            active:scale-95
+                            hover:shadow-sm
+                          "
                         title="Rad etish"
                       >
                         <X className="w-4 h-4" />
                       </button>
 
                       {/* APPROVE */}
+
                       <button
                         onClick={() =>
                           openConfirm(
@@ -596,7 +747,19 @@ export default function NewsRequests() {
                             item.developerUsername,
                           )
                         }
-                        className="p-1.5 sm:p-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl transition-all duration-150 active:scale-95"
+                        className="
+                            p-1.5
+                            sm:p-2
+                            bg-emerald-500/10
+                            hover:bg-emerald-500/20
+                            text-emerald-600
+                            dark:text-emerald-400
+                            rounded-xl
+                            transition-all
+                            duration-150
+                            active:scale-95
+                            hover:shadow-sm
+                          "
                         title="Tasdiqlash"
                       >
                         <Check className="w-4 h-4" />
@@ -606,8 +769,18 @@ export default function NewsRequests() {
                 </motion.div>
               ))
             ) : (
-              <div className="col-span-1 xl:col-span-2 py-12 text-center text-xs text-slate-400 dark:text-slate-500 font-bold">
-                Bu bolimda hech qanday sorovlar qolmadi.
+              <div className="col-span-1 xl:col-span-2 py-16 text-center">
+                <div className="mx-auto w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-900 flex items-center justify-center mb-4">
+                  <Layers className="w-6 h-6 text-slate-400 dark:text-slate-600" />
+                </div>
+
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-bold">
+                  Bu bolimda hech qanday sorovlar qolmadi.
+                </p>
+
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                  Yangi sorovlar kelganda ular shu yerda korinadi.
+                </p>
               </div>
             )}
           </AnimatePresence>
@@ -622,9 +795,15 @@ export default function NewsRequests() {
         {confirmModal.isOpen && confirmModal.item && (
           <div className="fixed inset-0 z-[99990] flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={{
+                opacity: 0,
+              }}
+              animate={{
+                opacity: 1,
+              }}
+              exit={{
+                opacity: 0,
+              }}
               onClick={closeConfirm}
               className="absolute inset-0 bg-slate-950/60 backdrop-blur-[4px]"
             />
@@ -650,7 +829,19 @@ export default function NewsRequests() {
                 stiffness: 200,
                 damping: 20,
               }}
-              className="relative w-full max-w-sm rounded-2xl p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl"
+              className="
+                  relative
+                  w-full
+                  max-w-sm
+                  rounded-2xl
+                  p-6
+                  bg-white
+                  dark:bg-slate-900
+                  border
+                  border-slate-100
+                  dark:border-slate-800
+                  shadow-2xl
+                "
             >
               <div className="flex flex-col items-center text-center space-y-4">
                 <div
@@ -684,14 +875,28 @@ export default function NewsRequests() {
                 <div className="grid grid-cols-2 gap-3 w-full pt-2">
                   <button
                     onClick={closeConfirm}
-                    className="py-2 text-xs font-black rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all duration-150 active:scale-95"
+                    className="
+                        py-2.5
+                        text-xs
+                        font-black
+                        rounded-xl
+                        bg-slate-100
+                        dark:bg-slate-800
+                        text-slate-700
+                        dark:text-slate-300
+                        hover:bg-slate-200
+                        dark:hover:bg-slate-700
+                        transition-all
+                        duration-150
+                        active:scale-95
+                      "
                   >
                     Orqaga
                   </button>
 
                   <button
                     onClick={handleConfirmAccept}
-                    className={`py-2 text-xs font-black rounded-xl text-white transition-all duration-150 active:scale-95 ${
+                    className={`py-2.5 text-xs font-black rounded-xl text-white transition-all duration-150 active:scale-95 ${
                       confirmModal.item.actionType === "approve"
                         ? "bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-500/10"
                         : "bg-rose-600 hover:bg-rose-700 shadow-lg shadow-rose-500/10"

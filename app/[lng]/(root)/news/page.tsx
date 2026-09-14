@@ -3,8 +3,7 @@
 import { useTheme } from "@/components/ui/theme-provider";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
-import MenuText from "@/components/menus/menu-text";
-import FillterCards from "@/components/fillters/fillter-cards";
+import FillterData from "@/components/fillters/fillter-data";
 import Link from "next/link";
 import useTranslate from "@/hooks/use-translate";
 import Image from "next/image";
@@ -68,15 +67,13 @@ function Page() {
   return (
     <main
       className={cn(
-        "relative min-h-screen pt-[10vh] px-4 lg:px-12 transition-colors duration-500",
+        "relative min-h-screen pt-[20vh] px-4 lg:px-12 transition-colors duration-500",
         isDark ? "bg-slate-950 text-white" : "bg-slate-50 text-slate-900",
       )}
     >
       <div className="max-w-7xl mx-auto flex flex-col items-center">
         {/* HEADER SECTION */}
         <section className="flex flex-col items-center text-center space-y-6 mb-16">
-          <MenuText text={t("MainText2")} className="" />
-
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter uppercase">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-500 to-blue-400">
               {t("news")}
@@ -101,13 +98,7 @@ function Page() {
             // Masalan, bosilgan tugma bo'yicha activeFilter ni 'all', 'best', 'newest', 'oldest' ga o'zgartirasiz
           }}
         >
-          <FillterCards
-            one={t("All")}
-            two={t("TheBestOnes")}
-            three={t("TheNewestOnes")}
-            four={t("TheOldestOnes")}
-            className="mb-5"
-          />
+          <FillterData className="mb-5" />
         </div>
 
         {/* LOADING & EMPTY STATES */}

@@ -2,16 +2,16 @@ import User from "@/models/user.model";
 import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongoose";
 import mongoose from "mongoose";
-import { currentUser } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 
-// 🟢 GET METODI — joriy foydalanuvchi o'z ma'lumotini olishi uchun
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const clerkUser = await currentUser();
-    if (!clerkUser) {
+    const { userId } = await auth();
+
+    if (!userId) {
       return NextResponse.json(
         { error: "Tizimga kirmagansiz" },
         { status: 401 },
@@ -21,6 +21,13 @@ export async function GET(
     await connectToDatabase();
 
     const { id } = await params;
+
+    if (!id || id === "undefined" || id === "null") {
+      return NextResponse.json(
+        { error: "Foydalanuvchi ID si yuborilmadi" },
+        { status: 400 },
+      );
+    }
 
     const filter = mongoose.Types.ObjectId.isValid(id)
       ? { _id: id }
@@ -37,8 +44,8 @@ export async function GET(
       );
     }
 
-    // Faqat o'zining ma'lumotini ko'rishi mumkin
-    if (user.clerkId !== clerkUser.id) {
+    // Faqat login qilgan user o'z ma'lumotini oladi
+    if (user.clerkId !== userId) {
       return NextResponse.json({ error: "Ruxsat yo'q" }, { status: 403 });
     }
 
@@ -47,9 +54,12 @@ export async function GET(
       id: user._id.toString(),
     });
   } catch (error) {
-    console.error("GET /api/user/[id] xatosi:", error);
+    console.error("GET /api/users/[id] xatosi:", error);
+
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Xatolik yuz berdi" },
+      {
+        error: error instanceof Error ? error.message : "Xatolik yuz berdi",
+      },
       { status: 500 },
     );
   }

@@ -35,7 +35,7 @@
   "update": "Yangilanish",
   "comment": "Izohlar",
   "newsLastText": "Biz bilan qoling va yangiliklarni kuzatib boring. Kelajakda sizni yanada zo'r va yangi yangiliklar kutmoqda.",
-  "GamesText": "O'zingiz hohlagan platformani tanlang",
+  "GamesText": "O'zingiz hohlagan o'yinlarni tanlang",
   "PCGames": "Kompyuter o'yinlari",
   "PCGamesText": "Eng yoqimli o'yinlar",
   "MobileGames": "Telefon o'yinlari",
@@ -71,7 +71,7 @@
   "Email": "Elektron pochta",
   "Address": "Manzil",
   "YourName": "Ismingiz",
-  "YourEmailAddress": "Elektron pochta manzilingiz",
+  "YourEmailAddress": "Telegram foydalanuvchi nomingiz",
   "WriteYourMessage": "Xabaringizni yozing",
   "SendAMessage": "Xabarni yuborish",
   "IsBeingSent": "yuborilmoqda",
@@ -155,5 +155,9 @@
   "list": "Ro'yxat",
   "requests": "So'rovlar",
   "userRequests": "Foydalanuvchi so'rovlari",
-  "loading": "Yuklanmoqda..."
+  "loading": "Yuklanmoqda...",
+  "ComingSoon": "Tez orada",
+  "common": {
+    "loading": "Yuklanmoqda..."
+  }
 }
