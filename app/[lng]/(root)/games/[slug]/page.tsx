@@ -62,7 +62,7 @@ export default function PCGameDetail({ params }: PageProps) {
   const slug = resolvedParams.slug;
 
   const paramsFromUrl = useParams();
-  const locale = (paramsFromUrl.locale as string) || "uz";
+  const currentLng = (paramsFromUrl?.lng as string) || "uz";
 
   const { resolvedTheme } = useTheme();
 
@@ -294,7 +294,9 @@ export default function PCGameDetail({ params }: PageProps) {
   // ==========================================
 
   const langObj =
-    game.langData?.[locale] || game.langData?.uz || game.langData?.en || {};
+    game.langData?.[currentLng] ||
+    game.langData?.[game.defaultLang || "uz"] ||
+    (game.langData ? Object.values(game.langData)[0] : {});
 
   const {
     title = "",
