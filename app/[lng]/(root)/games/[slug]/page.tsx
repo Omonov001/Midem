@@ -6,6 +6,7 @@
 
 import { useTheme } from "@/components/ui/theme-provider";
 import { useEffect, useState, ReactNode, use, useRef } from "react";
+import { useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 import {
@@ -13,7 +14,6 @@ import {
   IoCheckmarkCircle,
   IoClose,
   IoDownloadOutline,
-  IoPlayCircleOutline,
   IoStar,
   IoTimeOutline,
 } from "react-icons/io5";
@@ -60,6 +60,9 @@ interface PendingDownload {
 export default function PCGameDetail({ params }: PageProps) {
   const resolvedParams = use(params);
   const slug = resolvedParams.slug;
+
+  const paramsFromUrl = useParams();
+  const locale = (paramsFromUrl.locale as string) || "uz";
 
   const { resolvedTheme } = useTheme();
 
@@ -290,7 +293,8 @@ export default function PCGameDetail({ params }: PageProps) {
   // LANGUAGE DATA
   // ==========================================
 
-  const langObj = game.langData?.uz || game.langData?.en || {};
+  const langObj =
+    game.langData?.[locale] || game.langData?.uz || game.langData?.en || {};
 
   const {
     title = "",
