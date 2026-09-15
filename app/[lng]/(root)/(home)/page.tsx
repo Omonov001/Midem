@@ -314,70 +314,115 @@ function Page() {
                   direction="vertical"
                   slidesPerView={2}
                   spaceBetween={10}
-                  loop
+                  loop={homeData.news.length > 2}
                   speed={750}
                   autoplay={{
                     delay: 2600,
                     disableOnInteraction: false,
                     pauseOnMouseEnter: true,
                   }}
-                  pagination={{
-                    clickable: true,
-                    dynamicBullets: true,
-                  }}
+                  pagination={
+                    homeData.news.length > 0
+                      ? {
+                          clickable: true,
+                          dynamicBullets: true,
+                        }
+                      : false
+                  }
                   className="header-news-swiper h-[235px]"
                 >
-                  {homeData.news.slice(0, 6).map((item) => (
-                    <SwiperSlide key={item._id || item.id || item.slug}>
-                      <Link
-                        href={`/news/${item.slug}`}
+                  {homeData.news.length > 0 ? (
+                    homeData.news.slice(0, 6).map((item) => (
+                      <SwiperSlide key={item._id || item.id || item.slug}>
+                        <Link
+                          href={`/news/${item.slug}`}
+                          className={cn(
+                            "group relative flex h-full overflow-hidden rounded-2xl border p-4 transition-all",
+                            softSurface,
+                            "hover:border-blue-500/30",
+                          )}
+                        >
+                          <div className="absolute right-[-25px] top-[-25px] h-24 w-24 rounded-full bg-blue-500/[0.07] blur-2xl transition-all group-hover:bg-blue-500/[0.15]" />
+
+                          <div className="relative flex w-full items-center gap-4">
+                            <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-blue-500/10">
+                              {item.translations?.uz?.banners?.[0] ? (
+                                <img
+                                  src={item.translations.uz.banners[0]}
+                                  alt={item.translations.uz.title || "News"}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="flex h-full w-full items-center justify-center">
+                                  <IoNewspaper className="text-blue-500" />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <h3
+                                className={cn(
+                                  "truncate text-sm font-bold",
+                                  heading,
+                                )}
+                              >
+                                {item.translations?.uz?.title || "News"}
+                              </h3>
+
+                              <p
+                                className={cn(
+                                  "mt-1 line-clamp-2 text-xs",
+                                  muted,
+                                )}
+                              >
+                                {(item.translations?.uz?.content || "")
+                                  .replace(/<[^>]*>/g, "")
+                                  .trim()}
+                              </p>
+                            </div>
+
+                            <IoArrowForward className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-blue-500" />
+                          </div>
+                        </Link>
+                      </SwiperSlide>
+                    ))
+                  ) : (
+                    <SwiperSlide>
+                      <div
                         className={cn(
-                          "group relative flex h-full overflow-hidden rounded-2xl border p-4 transition-all",
-                          softSurface,
-                          "hover:border-blue-500/30",
+                          "flex h-full w-full items-center justify-center rounded-2xl border border-dashed px-5",
+                          isDark
+                            ? "border-white/10 bg-white/[0.02]"
+                            : "border-slate-200 bg-white/60",
                         )}
                       >
-                        <div className="absolute right-[-25px] top-[-25px] h-24 w-24 rounded-full bg-blue-500/[0.07] blur-2xl transition-all group-hover:bg-blue-500/[0.15]" />
-
-                        <div className="relative flex w-full items-center gap-4">
-                          <div className="h-11 w-11 shrink-0 overflow-hidden rounded-xl bg-blue-500/10">
-                            {item.translations?.uz?.banners?.[0] ? (
-                              <img
-                                src={item.translations.uz.banners[0]}
-                                alt={item.translations.uz.title || "News"}
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center">
-                                <IoNewspaper className="text-blue-500" />
-                              </div>
+                        <div className="flex w-full max-w-[280px] items-center gap-4">
+                          <div
+                            className={cn(
+                              "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
+                              isDark ? "bg-blue-500/10" : "bg-blue-50",
                             )}
+                          >
+                            <IoNewspaper className="text-xl text-blue-500/70" />
                           </div>
 
-                          <div className="min-w-0 flex-1">
+                          <div className="min-w-0">
                             <h3
                               className={cn(
-                                "truncate text-sm font-bold",
+                                "truncate text-sm font-black",
                                 heading,
                               )}
                             >
-                              {item.translations?.uz?.title || "News"}
+                              {t("news")}
                             </h3>
-
-                            <p
-                              className={cn("mt-1 line-clamp-2 text-xs", muted)}
-                            >
-                              {(item.translations?.uz?.content || "")
-                                .replace(/<[^>]*>/g, "")
-                                .trim()}
+                            <p className={cn("mt-1 text-xs leading-5", muted)}>
+                              Hozircha yangiliklar mavjud emas
                             </p>
                           </div>
-
-                          <IoArrowForward className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-blue-500" />
                         </div>
-                      </Link>
+                      </div>
                     </SwiperSlide>
-                  ))}
+                  )}
                 </Swiper>
               </div>
 
@@ -419,17 +464,21 @@ function Page() {
                   modules={[Autoplay, Pagination]}
                   slidesPerView={2}
                   spaceBetween={10}
-                  loop
+                  loop={homeData.games.length > 2}
                   speed={700}
                   autoplay={{
                     delay: 2300,
                     disableOnInteraction: false,
                     pauseOnMouseEnter: true,
                   }}
-                  pagination={{
-                    clickable: true,
-                    dynamicBullets: true,
-                  }}
+                  pagination={
+                    homeData.games.length > 0
+                      ? {
+                          clickable: true,
+                          dynamicBullets: true,
+                        }
+                      : false
+                  }
                   breakpoints={{
                     0: {
                       slidesPerView: 1,
@@ -440,52 +489,92 @@ function Page() {
                   }}
                   className="header-games-swiper h-[235px]"
                 >
-                  {homeData.games.slice(0, 6).map((item) => (
-                    <SwiperSlide key={item._id || item.id || item.slug}>
-                      <Link
-                        href={`/games/${item.slug}`}
+                  {homeData.games.length > 0 ? (
+                    homeData.games.slice(0, 6).map((item) => (
+                      <SwiperSlide key={item._id || item.id || item.slug}>
+                        <Link
+                          href={`/games/${item.slug}`}
+                          className={cn(
+                            "group relative block h-full overflow-hidden rounded-2xl border",
+                            softSurface,
+                          )}
+                        >
+                          <div className="relative h-[115px] overflow-hidden bg-gradient-to-br from-blue-500/[0.12] via-indigo-500/[0.08] to-purple-500/[0.08]">
+                            <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(99,102,241,0.18),transparent_45%)]" />
+
+                            {item.langData?.uz?.iconPreview ? (
+                              <img
+                                src={item.langData.uz.iconPreview}
+                                alt={item.langData.uz.title || "Game"}
+                                className="absolute inset-0 h-full w-full object-contain"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <IoGameController className="text-5xl text-indigo-500/20" />
+                              </div>
+                            )}
+
+                            <div className="absolute bottom-2 left-2 rounded-md border border-white/10 bg-black/30 px-2 py-1 text-[9px] font-bold text-white backdrop-blur-md">
+                              {item.langData?.uz?.title || "MIDEM"}
+                            </div>
+                          </div>
+
+                          <div className="p-3">
+                            <h3
+                              className={cn(
+                                "truncate text-sm font-bold",
+                                heading,
+                              )}
+                            >
+                              {item.langData?.uz?.title || "Game"}
+                            </h3>
+
+                            <p
+                              className={cn("mt-2 line-clamp-2 text-xs", muted)}
+                            >
+                              {item.langData?.uz?.Maindescription || "Game"}
+                            </p>
+                          </div>
+                        </Link>
+                      </SwiperSlide>
+                    ))
+                  ) : (
+                    <SwiperSlide>
+                      <div
                         className={cn(
-                          "group relative block h-full overflow-hidden rounded-2xl border",
-                          softSurface,
+                          "flex h-full w-full items-center justify-center rounded-2xl border border-dashed px-5",
+                          isDark
+                            ? "border-white/10 bg-white/[0.02]"
+                            : "border-slate-200 bg-white/60",
                         )}
                       >
-                        <div className="relative h-[115px] overflow-hidden bg-gradient-to-br from-blue-500/[0.12] via-indigo-500/[0.08] to-purple-500/[0.08]">
-                          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,rgba(99,102,241,0.18),transparent_45%)]" />
-
-                          {item.langData?.uz?.iconPreview ? (
-                            <img
-                              src={item.langData.uz.iconPreview}
-                              alt={item.langData.uz.title || "Game"}
-                              className="absolute inset-0 h-full w-full object-contain"
-                            />
-                          ) : (
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <IoGameController className="text-5xl text-indigo-500/20" />
-                            </div>
-                          )}
-
-                          <div className="absolute bottom-2 left-2 rounded-md border border-white/10 bg-black/30 px-2 py-1 text-[9px] font-bold text-white backdrop-blur-md">
-                            {item.langData?.uz?.title || "MIDEM"}
-                          </div>
-                        </div>
-
-                        <div className="p-3">
-                          <h3
+                        <div className="flex w-full max-w-[280px] items-center gap-4">
+                          <div
                             className={cn(
-                              "truncate text-sm font-bold",
-                              heading,
+                              "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
+                              isDark ? "bg-indigo-500/10" : "bg-indigo-50",
                             )}
                           >
-                            {item.langData?.uz?.title || "Game"}
-                          </h3>
+                            <IoGameController className="text-xl text-indigo-500/70" />
+                          </div>
 
-                          <p className={cn("mt-2 line-clamp-2 text-xs", muted)}>
-                            {item.langData?.uz?.Maindescription || "Game"}
-                          </p>
+                          <div className="min-w-0">
+                            <h3
+                              className={cn(
+                                "truncate text-sm font-black",
+                                heading,
+                              )}
+                            >
+                              {t("games")}
+                            </h3>
+                            <p className={cn("mt-1 text-xs leading-5", muted)}>
+                              Hozircha o‘yinlar mavjud emas
+                            </p>
+                          </div>
                         </div>
-                      </Link>
+                      </div>
                     </SwiperSlide>
-                  ))}
+                  )}
                 </Swiper>
               </div>
             </div>
@@ -540,10 +629,14 @@ function Page() {
               disableOnInteraction: false,
               pauseOnMouseEnter: true,
             }}
-            pagination={{
-              clickable: true,
-              dynamicBullets: true,
-            }}
+            pagination={
+              filteredNews.length > 0
+                ? {
+                    clickable: true,
+                    dynamicBullets: true,
+                  }
+                : false
+            }
             breakpoints={{
               320: {
                 slidesPerView: 1,
@@ -560,46 +653,78 @@ function Page() {
             }}
             className="pb-14"
           >
-            {filteredNews.map((item) => (
-              <SwiperSlide key={item._id || item.id || item.slug}>
-                <Link href={`/news/${item.slug}`}>
-                  <div
-                    className={cn(
-                      "group min-h-[340px] overflow-hidden rounded-[2rem] border p-5 transition-all duration-500 hover:-translate-y-2",
-                      surface,
-                      "hover:border-blue-500/20 hover:shadow-2xl hover:shadow-blue-500/[0.08]",
-                    )}
-                  >
-                    <div className="relative mb-6 flex h-48 items-center justify-center overflow-hidden rounded-[1.4rem] bg-gradient-to-br from-blue-500/10 via-indigo-500/[0.06] to-transparent">
-                      {item.translations?.uz?.banners?.[0] ? (
-                        <img
-                          src={item.translations.uz.banners[0]}
-                          alt={item.translations.uz.title || "News"}
-                          className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <IoNewspaper className="relative text-5xl text-blue-500/30 transition-transform duration-500 group-hover:scale-125" />
-                      )}
-                    </div>
-
-                    <h3
+            {filteredNews.length > 0 ? (
+              filteredNews.map((item) => (
+                <SwiperSlide key={item._id || item.id || item.slug}>
+                  <Link href={`/news/${item.slug}`}>
+                    <div
                       className={cn(
-                        "mb-4 line-clamp-2 text-lg font-black",
-                        heading,
+                        "group min-h-[340px] overflow-hidden rounded-[2rem] border p-5 transition-all duration-500 hover:-translate-y-2",
+                        surface,
+                        "hover:border-blue-500/20 hover:shadow-2xl hover:shadow-blue-500/[0.08]",
                       )}
                     >
-                      {item.translations?.uz?.title || "News"}
+                      <div className="relative mb-6 flex h-48 items-center justify-center overflow-hidden rounded-[1.4rem] bg-gradient-to-br from-blue-500/10 via-indigo-500/[0.06] to-transparent">
+                        {item.translations?.uz?.banners?.[0] ? (
+                          <img
+                            src={item.translations.uz.banners[0]}
+                            alt={item.translations.uz.title || "News"}
+                            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <IoNewspaper className="relative text-5xl text-blue-500/30 transition-transform duration-500 group-hover:scale-125" />
+                        )}
+                      </div>
+
+                      <h3
+                        className={cn(
+                          "mb-4 line-clamp-2 text-lg font-black",
+                          heading,
+                        )}
+                      >
+                        {item.translations?.uz?.title || "News"}
+                      </h3>
+
+                      <p className={cn("line-clamp-2 text-sm", muted)}>
+                        {(item.translations?.uz?.content || "")
+                          .replace(/<[^>]*>/g, "")
+                          .trim()}
+                      </p>
+                    </div>
+                  </Link>
+                </SwiperSlide>
+              ))
+            ) : (
+              <SwiperSlide>
+                <div
+                  className={cn(
+                    "flex min-h-[340px] w-full items-center justify-center rounded-[2rem] border border-dashed",
+                    isDark
+                      ? "border-white/10 bg-white/[0.02]"
+                      : "border-slate-200 bg-white/60",
+                  )}
+                >
+                  <div className="text-center">
+                    <div
+                      className={cn(
+                        "mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl",
+                        isDark ? "bg-blue-500/10" : "bg-blue-50",
+                      )}
+                    >
+                      <IoNewspaper className="text-3xl text-blue-500/70" />
+                    </div>
+
+                    <h3 className={cn("text-base font-black", heading)}>
+                      {t("news")}
                     </h3>
 
-                    <p className={cn("line-clamp-2 text-sm", muted)}>
-                      {(item.translations?.uz?.content || "")
-                        .replace(/<[^>]*>/g, "")
-                        .trim()}
+                    <p className={cn("mt-2 text-sm", muted)}>
+                      Hozircha yangiliklar mavjud emas
                     </p>
                   </div>
-                </Link>
+                </div>
               </SwiperSlide>
-            ))}
+            )}
           </Swiper>
         </section>
 
@@ -651,10 +776,14 @@ function Page() {
               disableOnInteraction: false,
               pauseOnMouseEnter: true,
             }}
-            pagination={{
-              clickable: true,
-              dynamicBullets: true,
-            }}
+            pagination={
+              filteredGames.length > 0
+                ? {
+                    clickable: true,
+                    dynamicBullets: true,
+                  }
+                : false
+            }
             breakpoints={{
               320: {
                 slidesPerView: 1,
@@ -671,51 +800,83 @@ function Page() {
             }}
             className="pb-14"
           >
-            {filteredGames.map((item) => (
-              <SwiperSlide key={item._id || item.id || item.slug}>
-                <Link href={`/games/${item.slug}`}>
-                  <div
-                    className={cn(
-                      "group overflow-hidden rounded-[2rem] border transition-all duration-500 hover:-translate-y-2",
-                      surface,
-                      "hover:border-blue-500/25 hover:shadow-2xl hover:shadow-blue-500/[0.08]",
-                    )}
-                  >
-                    <div className="relative h-64 overflow-hidden bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10">
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(59,130,246,0.16),transparent_45%)]" />
-
-                      {item.langData?.uz?.iconPreview ? (
-                        <img
-                          src={item.langData.uz.iconPreview}
-                          alt={item.langData.uz.title || "Game"}
-                          className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <IoGameController className="text-7xl text-blue-500/20 transition-all duration-500 group-hover:scale-125 group-hover:text-blue-500/30" />
-                        </div>
+            {filteredGames.length > 0 ? (
+              filteredGames.map((item) => (
+                <SwiperSlide key={item._id || item.id || item.slug}>
+                  <Link href={`/games/${item.slug}`}>
+                    <div
+                      className={cn(
+                        "group overflow-hidden rounded-[2rem] border transition-all duration-500 hover:-translate-y-2",
+                        surface,
+                        "hover:border-blue-500/25 hover:shadow-2xl hover:shadow-blue-500/[0.08]",
                       )}
+                    >
+                      <div className="relative h-64 overflow-hidden bg-gradient-to-br from-blue-500/10 via-indigo-500/10 to-purple-500/10">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_25%,rgba(59,130,246,0.16),transparent_45%)]" />
 
-                      <div className="absolute bottom-4 left-4 rounded-lg border border-white/10 bg-black/25 px-3 py-1 text-[10px] font-black tracking-widest text-white backdrop-blur-md">
-                        MIDEM
+                        {item.langData?.uz?.iconPreview ? (
+                          <img
+                            src={item.langData.uz.iconPreview}
+                            alt={item.langData.uz.title || "Game"}
+                            className="absolute inset-0 h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <IoGameController className="text-7xl text-blue-500/20 transition-all duration-500 group-hover:scale-125 group-hover:text-blue-500/30" />
+                          </div>
+                        )}
+
+                        <div className="absolute bottom-4 left-4 rounded-lg border border-white/10 bg-black/25 px-3 py-1 text-[10px] font-black tracking-widest text-white backdrop-blur-md">
+                          MIDEM
+                        </div>
+                      </div>
+
+                      <div className="p-6">
+                        <h3
+                          className={cn("truncate text-lg font-black", heading)}
+                        >
+                          {item.langData?.uz?.title || "Game"}
+                        </h3>
+
+                        <p className={cn("mt-2 line-clamp-2 text-sm", muted)}>
+                          {item.langData?.uz?.Maindescription || "Game"}
+                        </p>
                       </div>
                     </div>
-
-                    <div className="p-6">
-                      <h3
-                        className={cn("truncate text-lg font-black", heading)}
-                      >
-                        {item.langData?.uz?.title || "Game"}
-                      </h3>
-
-                      <p className={cn("mt-2 line-clamp-2 text-sm", muted)}>
-                        {item.langData?.uz?.Maindescription || "Game"}
-                      </p>
+                  </Link>
+                </SwiperSlide>
+              ))
+            ) : (
+              <SwiperSlide>
+                <div
+                  className={cn(
+                    "flex min-h-[340px] w-full items-center justify-center rounded-[2rem] border border-dashed",
+                    isDark
+                      ? "border-white/10 bg-white/[0.02]"
+                      : "border-slate-200 bg-white/60",
+                  )}
+                >
+                  <div className="text-center">
+                    <div
+                      className={cn(
+                        "mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl",
+                        isDark ? "bg-indigo-500/10" : "bg-indigo-50",
+                      )}
+                    >
+                      <IoGameController className="text-3xl text-indigo-500/70" />
                     </div>
+
+                    <h3 className={cn("text-base font-black", heading)}>
+                      {t("games")}
+                    </h3>
+
+                    <p className={cn("mt-2 text-sm", muted)}>
+                      Hozircha o‘yinlar mavjud emas
+                    </p>
                   </div>
-                </Link>
+                </div>
               </SwiperSlide>
-            ))}
+            )}
           </Swiper>
         </section>
 
@@ -755,58 +916,89 @@ function Page() {
               disableOnInteraction: false,
               pauseOnMouseEnter: true,
             }}
-            pagination={{
-              clickable: true,
-              dynamicBullets: true,
-            }}
+            pagination={
+              homeData.admins.length > 0
+                ? {
+                    clickable: true,
+                    dynamicBullets: true,
+                  }
+                : false
+            }
             breakpoints={{
-              320: {
-                slidesPerView: 1,
-              },
-              768: {
-                slidesPerView: 2,
-              },
-              1100: {
-                slidesPerView: 3,
-              },
+              320: { slidesPerView: 1 },
+              768: { slidesPerView: 2 },
+              1100: { slidesPerView: 3 },
             }}
             className="pb-14"
           >
-            {homeData.admins.map((item) => (
-              <SwiperSlide key={item._id || item.id || item.name}>
+            {homeData.admins.length > 0 ? (
+              homeData.admins.map((item) => (
+                <SwiperSlide key={item._id || item.id || item.name}>
+                  <div
+                    className={cn(
+                      "group flex min-h-[180px] items-center gap-5 rounded-[2rem] border p-6 transition-all duration-500 hover:-translate-y-1",
+                      surface,
+                      "hover:border-blue-500/20 hover:shadow-xl hover:shadow-blue-500/[0.08]",
+                    )}
+                  >
+                    <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/10">
+                      {item.picture ? (
+                        <img
+                          src={item.picture}
+                          alt={item.name || "Admin"}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <IoShieldCheckmark className="text-2xl text-blue-500/60" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="w-full min-w-0">
+                      <h3
+                        className={cn("truncate text-lg font-black", heading)}
+                      >
+                        {item.name || "Admin"}
+                      </h3>
+                      <p className={cn("mt-2 text-sm capitalize", muted)}>
+                        {item.role || "admin"}
+                      </p>
+                    </div>
+                  </div>
+                </SwiperSlide>
+              ))
+            ) : (
+              <SwiperSlide>
                 <div
                   className={cn(
-                    "group flex min-h-[180px] items-center gap-5 rounded-[2rem] border p-6 transition-all duration-500 hover:-translate-y-1",
-                    surface,
-                    "hover:border-blue-500/20 hover:shadow-xl hover:shadow-blue-500/[0.08]",
+                    "flex min-h-[340px] w-full items-center justify-center rounded-[2rem] border border-dashed",
+                    isDark
+                      ? "border-white/10 bg-white/[0.02]"
+                      : "border-slate-200 bg-white/60",
                   )}
                 >
-                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/10">
-                    {item.picture ? (
-                      <img
-                        src={item.picture}
-                        alt={item.name || "Admin"}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center">
-                        <IoShieldCheckmark className="text-2xl text-blue-500/60" />
-                      </div>
-                    )}
-                  </div>
+                  <div className="text-center">
+                    <div
+                      className={cn(
+                        "mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl",
+                        isDark ? "bg-blue-500/10" : "bg-blue-50",
+                      )}
+                    >
+                      <IoShieldCheckmark className="text-3xl text-blue-500/70" />
+                    </div>
 
-                  <div className="w-full min-w-0">
-                    <h3 className={cn("truncate text-lg font-black", heading)}>
-                      {item.name || "Admin"}
+                    <h3 className={cn("text-base font-black", heading)}>
+                      {t("Admins")}
                     </h3>
 
-                    <p className={cn("mt-2 text-sm capitalize", muted)}>
-                      {item.role || "admin"}
+                    <p className={cn("mt-2 text-sm", muted)}>
+                      Hozircha adminlar mavjud emas
                     </p>
                   </div>
                 </div>
               </SwiperSlide>
-            ))}
+            )}
           </Swiper>
         </section>
       </div>
