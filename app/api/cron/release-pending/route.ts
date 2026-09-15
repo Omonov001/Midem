@@ -11,9 +11,24 @@ export async function GET(req: NextRequest) {
 
     const authHeader = req.headers.get("authorization");
 
+    console.log("🔐 CRON AUTH:", {
+      hasAuthorization: !!authHeader,
+      hasCronSecret: !!process.env.CRON_SECRET,
+    });
+
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      console.error("❌ CRON UNAUTHORIZED");
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized",
+        },
+        { status: 401 },
+      );
     }
+
+    console.log("✅ CRON AUTHORIZED");
 
     // =========================
     // 2. DATABASE
@@ -21,23 +36,62 @@ export async function GET(req: NextRequest) {
 
     await connectToDatabase();
 
+    console.log("✅ DATABASE CONNECTED");
+
+    const now = new Date();
+
+    console.log("🕐 CRON NOW:", now.toISOString());
+
     // =========================
-    // 3. READY PURCHASES
+    // 3. ALL PAID PURCHASES
+    // =========================
+
+    const paidPurchases = await Purchase.find({
+      status: "paid",
+    }).select("_id developerId developerShare status availableAt releasedAt");
+
+    console.log(
+      "💰 ALL PAID PURCHASES:",
+      paidPurchases.map((purchase) => ({
+        id: purchase._id.toString(),
+        developerId: purchase.developerId?.toString(),
+        developerShare: purchase.developerShare,
+        status: purchase.status,
+        availableAt: purchase.availableAt,
+        releasedAt: purchase.releasedAt,
+      })),
+    );
+
+    // =========================
+    // 4. READY PURCHASES
     // =========================
 
     const purchases = await Purchase.find({
       status: "paid",
       releasedAt: null,
-      availableAt: { $lte: new Date() },
+      availableAt: { $lte: now },
     });
+
+    console.log(
+      "🚀 READY PURCHASES:",
+      purchases.map((purchase) => ({
+        id: purchase._id.toString(),
+        developerId: purchase.developerId?.toString(),
+        developerShare: purchase.developerShare,
+        availableAt: purchase.availableAt,
+        releasedAt: purchase.releasedAt,
+      })),
+    );
 
     let released = 0;
 
     // =========================
-    // 4. RELEASE BALANCE
+    // 5. RELEASE BALANCE
     // =========================
 
     for (const purchase of purchases) {
+      console.log("🔄 PROCESSING PURCHASE:", purchase._id.toString());
+
       const result = await Purchase.updateOne(
         {
           _id: purchase._id,
@@ -51,10 +105,27 @@ export async function GET(req: NextRequest) {
         },
       );
 
+      console.log("📝 PURCHASE UPDATE RESULT:", {
+        purchaseId: purchase._id.toString(),
+        matchedCount: result.matchedCount,
+        modifiedCount: result.modifiedCount,
+      });
+
       // Faqat birinchi marta release qilinsa balance o'zgaradi
       if (result.modifiedCount !== 1) {
+        console.warn(
+          "⚠️ PURCHASE ALREADY RELEASED OR UPDATE FAILED:",
+          purchase._id.toString(),
+        );
+
         continue;
       }
+
+      // =========================
+      // 6. FIND DEVELOPER
+      // =========================
+
+      console.log("👤 FINDING DEVELOPER:", purchase.developerId?.toString());
 
       const developer = await User.findByIdAndUpdate(
         purchase.developerId,
@@ -63,7 +134,7 @@ export async function GET(req: NextRequest) {
             // Pendingdan olib tashlaymiz
             pendingBalance: -purchase.developerShare,
 
-            // Asosiy user balance'ga qo'shamiz
+            // Asosiy balance'ga qo'shamiz
             balance: purchase.developerShare,
           },
         },
@@ -72,26 +143,38 @@ export async function GET(req: NextRequest) {
         },
       );
 
+      // =========================
+      // 7. DEVELOPER NOT FOUND
+      // =========================
+
       if (!developer) {
         console.error("❌ Developer User topilmadi:", purchase.developerId);
 
-        // Purchase release bo'lib ketgan, lekin user topilmagan.
-        // Keyingi cron qayta ishlamasligi uchun xatoni log qilamiz.
         continue;
       }
+
+      // =========================
+      // 8. SUCCESS LOG
+      // =========================
 
       console.log("💰 BALANCE RELEASED:", {
         purchaseId: purchase._id.toString(),
         developerId: purchase.developerId.toString(),
         amount: purchase.developerShare,
+        newBalance: developer.balance,
+        newPendingBalance: developer.pendingBalance,
       });
 
       released++;
     }
 
     // =========================
-    // 5. RESPONSE
+    // 9. RESPONSE
     // =========================
+
+    console.log("✅ CRON FINISHED:", {
+      released,
+    });
 
     return NextResponse.json({
       success: true,
