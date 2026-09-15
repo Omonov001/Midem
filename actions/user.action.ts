@@ -5,6 +5,7 @@ import { connectToDatabase } from "@/lib/mongoose";
 import User, { IUser } from "@/models/user.model";
 import { auth, clerkClient, currentUser } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
+import "@/models/game.model";
 
 export async function getUserData(): Promise<IUser | null> {
   try {

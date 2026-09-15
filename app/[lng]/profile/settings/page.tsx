@@ -2,19 +2,7 @@
 
 import { useState } from "react";
 import { useTheme } from "@/components/ui/theme-provider";
-import {
-  Settings,
-  Moon,
-  Sun,
-  BellRing,
-  ShieldCheck, // ShieldLock orniga ShieldCheck ishlatsang aniq chiqadi
-  Languages,
-  UserCircle,
-  Smartphone,
-  Eye,
-  Check,
-  Lock, // Qoshimcha xavfsizlik ikonasi
-} from "lucide-react";
+import { Settings, Moon, Sun, BellRing, Eye, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import useTranslate from "@/hooks/use-translate";
 
@@ -138,9 +126,7 @@ function Page() {
           </div>
         </div>
 
-        {/* BILDIRISHNOMALAR VA XAVFSIZLIK */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Notifications */}
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-white/5 p-8">
             <div className="flex items-center gap-3 mb-8">
               <BellRing className="text-blue-600" size={24} />
@@ -163,7 +149,7 @@ function Page() {
               />
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
