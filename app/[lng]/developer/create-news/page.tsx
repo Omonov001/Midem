@@ -1,9 +1,11 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import {
   Newspaper,
   Image as ImageIcon,
@@ -26,7 +28,7 @@ const LANGUAGES = [
   { code: "uz", label: "O'zbekcha" },
   { code: "ru", label: "Русский" },
   { code: "en", label: "English" },
-  { code: "tu", label: "Türkçe" },
+  { code: "tr", label: "Türkçe" },
 ];
 
 interface BannerImage {
@@ -49,8 +51,11 @@ const generateSlug = (text: string): string => {
 
 export default function CreateNewsPage() {
   const router = useRouter();
+  const lng = useLocale();
+
   const [activeLang, setActiveLang] = useState("uz");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [activePreviewImage, setActivePreviewImage] = useState<string | null>(
     null,
   );
@@ -76,15 +81,42 @@ export default function CreateNewsPage() {
     uz: { title: "", content: "", banners: [] as BannerImage[] },
     ru: { title: "", content: "", banners: [] as BannerImage[] },
     en: { title: "", content: "", banners: [] as BannerImage[] },
-    tu: { title: "", content: "", banners: [] as BannerImage[] },
+    tr: { title: "", content: "", banners: [] as BannerImage[] },
   });
 
-  const [selectedGame, setSelectedGame] = useState("");
+  // Tanlangan o'yinning ID'si
+  const [selectedGameId, setSelectedGameId] = useState("");
 
-  const myGames = [
-    { id: "1", title: "Shadowbound: Chronicle" },
-    { id: "2", title: "Cyber Neon: Drift" },
-  ];
+  // Developerning haqiqiy o'yinlari
+  const [myGames, setMyGames] = useState<any[]>([]);
+  const [gamesLoading, setGamesLoading] = useState(true);
+
+  // Developer o'yinlarini API orqali olish
+  useEffect(() => {
+    const loadMyGames = async () => {
+      try {
+        setGamesLoading(true);
+
+        const response = await fetch("/api/developer/games");
+        const result = await response.json();
+
+        if (response.ok) {
+          setMyGames(result);
+        } else {
+          console.error(
+            "O'yin IDlarini yuklashda xatolik:",
+            result?.message || "Noma'lum xatolik",
+          );
+        }
+      } catch (error) {
+        console.error("O'yin IDlarini yuklashda xatolik:", error);
+      } finally {
+        setGamesLoading(false);
+      }
+    };
+
+    loadMyGames();
+  }, []);
 
   const handleTextChange = (
     lang: string,
@@ -93,7 +125,10 @@ export default function CreateNewsPage() {
   ) => {
     setTranslations((prev) => ({
       ...prev,
-      [lang]: { ...prev[lang as keyof typeof prev], [field]: value },
+      [lang]: {
+        ...prev[lang as keyof typeof prev],
+        [field]: value,
+      },
     }));
 
     if (lang === "uz" && field === "title") {
@@ -103,6 +138,7 @@ export default function CreateNewsPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
+
     if (files && files.length > 0) {
       const newBanners: BannerImage[] = Array.from(files).map((file) => ({
         file,
@@ -120,14 +156,19 @@ export default function CreateNewsPage() {
         },
       }));
     }
-    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const removeFile = (e: React.MouseEvent, indexToRemove: number) => {
     e.stopPropagation();
+
     setTranslations((prev) => {
       const currentBanners = prev[activeLang as keyof typeof prev].banners;
-      if (currentBanners[indexToRemove].preview) {
+
+      if (currentBanners[indexToRemove]?.preview) {
         URL.revokeObjectURL(currentBanners[indexToRemove].preview);
       }
 
@@ -156,6 +197,7 @@ export default function CreateNewsPage() {
 
       for (const lang of Object.keys(translations)) {
         const langData = translations[lang as keyof typeof translations];
+
         const bannerUrls: string[] = [];
 
         for (const banner of langData.banners) {
@@ -165,6 +207,7 @@ export default function CreateNewsPage() {
             );
 
             const uploadResult = await handleGameUpload(banner.file);
+
             if (!uploadResult.success || !uploadResult.fileKey) {
               throw new Error(
                 `[${lang.toUpperCase()}] Rasmni R2 ga yuklashda xatolik yuz berdi!`,
@@ -186,6 +229,7 @@ export default function CreateNewsPage() {
 
       const baseTitle =
         translations.uz.title || translations.en.title || "news";
+
       const generatedSlug =
         slug.trim() !== ""
           ? slug
@@ -197,10 +241,12 @@ export default function CreateNewsPage() {
             "-" +
             Date.now();
 
-      // ✨ BU YERDA authorId KERAK EMAS (Server Clerk orqali o'zi topadi)
       const payload = {
         slug: generatedSlug,
-        selectedGame: selectedGame || undefined,
+
+        // Bu yerda o'yinning o'zi emas, uning ID'si yuboriladi
+        selectedGame: selectedGameId || undefined,
+
         visibility,
         request: "requested",
         translations: finalTranslationsData,
@@ -208,11 +254,14 @@ export default function CreateNewsPage() {
 
       const response = await fetch("/api/news", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
 
       const result = await response.json();
+
       if (result.success) {
         setModalState({
           isOpen: true,
@@ -231,6 +280,7 @@ export default function CreateNewsPage() {
       }
     } catch (error: any) {
       console.error("Xatolik:", error);
+
       setModalState({
         isOpen: true,
         type: "error",
@@ -245,7 +295,12 @@ export default function CreateNewsPage() {
 
   const handleModalClose = () => {
     const isSuccess = modalState.type === "success";
-    setModalState((prev) => ({ ...prev, isOpen: false }));
+
+    setModalState((prev) => ({
+      ...prev,
+      isOpen: false,
+    }));
+
     if (isSuccess) {
       router.push("/developer/my-news");
     }
@@ -255,24 +310,26 @@ export default function CreateNewsPage() {
 
   return (
     <div className="w-full ml-5 max-w-5xl my-16 mx-auto p-4 md:p-0 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
-      {/* HEADER */}
+      {/* HEADER */}{" "}
       <div className="flex flex-col gap-1">
+        {" "}
         <div>
+          {" "}
           <h1 className="text-3xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300">
-            Yangi Yangilik Qoʻshish
+            Yangi Yangilik Qoʻshish{" "}
           </h1>
           <p className="text-sm mt-1 text-slate-400 font-medium">
             Har bir til uchun alohida matn va rasmlar galereyasini kiriting.
           </p>
         </div>
       </div>
-
       {/* TILLAR VA STATUS SATRI */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
         <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 dark:bg-white/5 rounded-2xl w-fit border border-slate-200/50 dark:border-white/5 overflow-x-auto max-w-full">
           {LANGUAGES.map((lang) => {
             const current =
               translations[lang.code as keyof typeof translations];
+
             const isFilled = current.title.length > 0;
             const hasImages = current.banners.length > 0;
 
@@ -295,7 +352,9 @@ export default function CreateNewsPage() {
                     isFilled && "text-emerald-500",
                   )}
                 />
+
                 {lang.label}
+
                 {hasImages && (
                   <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-blue-500 text-white dark:bg-blue-600 rounded-md font-black">
                     {current.banners.length}
@@ -320,6 +379,7 @@ export default function CreateNewsPage() {
             <Eye size={14} />
             Ommaviy
           </button>
+
           <button
             type="button"
             onClick={() => setVisibility("private")}
@@ -335,7 +395,6 @@ export default function CreateNewsPage() {
           </button>
         </div>
       </div>
-
       {/* FORMA */}
       <form
         onSubmit={handleSubmit}
@@ -349,8 +408,10 @@ export default function CreateNewsPage() {
 
           <div className="space-y-2.5">
             <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-              <Newspaper size={16} className="text-slate-400" /> Sarlavha
+              <Newspaper size={16} className="text-slate-400" />
+              Sarlavha
             </label>
+
             <input
               type="text"
               required={activeLang === "uz"}
@@ -369,9 +430,10 @@ export default function CreateNewsPage() {
 
           <div className="space-y-2.5">
             <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-              <LinkIcon size={16} className="text-slate-400" /> URL Manzili
-              (Slug)
+              <LinkIcon size={16} className="text-slate-400" />
+              URL Manzili (Slug)
             </label>
+
             <input
               type="text"
               required
@@ -390,6 +452,7 @@ export default function CreateNewsPage() {
             <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
               Maqola batafsil matni
             </label>
+
             <textarea
               required={activeLang === "uz"}
               rows={9}
@@ -409,35 +472,63 @@ export default function CreateNewsPage() {
 
         <div className="space-y-6">
           <div className="p-6 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-100/50 dark:shadow-none space-y-5">
+            {/* TEGISHLI O'YIN ID */}
             <div className="space-y-2.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                <Layers size={14} className="text-slate-400" /> Tegishli Oʻyin
-                (Ixtiyoriy)
+                <Layers size={14} className="text-slate-400" />
+                Tegishli Oʻyin ID (Ixtiyoriy)
               </label>
+
               <select
-                value={selectedGame}
-                onChange={(e) => setSelectedGame(e.target.value)}
+                value={selectedGameId}
+                onChange={(e) => setSelectedGameId(e.target.value)}
                 className="w-full px-4 py-3.5 rounded-xl border text-sm font-medium bg-slate-50/50 dark:bg-slate-900 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all duration-200"
               >
                 <option value="" className="dark:bg-slate-900">
-                  Oyin tanlanmagan (Umumiy yangilik)
+                  O'yin tanlanmagan (Umumiy yangilik)
                 </option>
-                {myGames.map((game) => (
-                  <option
-                    key={game.id}
-                    value={game.id}
-                    className="dark:bg-slate-900"
-                  >
-                    {game.title}
+
+                {gamesLoading ? (
+                  <option value="" disabled className="dark:bg-slate-900">
+                    O'yin IDlari yuklanmoqda...
                   </option>
-                ))}
+                ) : (
+                  myGames.map((game) => {
+                    /*
+                     * lng orqali o'yinning shu tildagi nomini olamiz.
+                     *
+                     * Masalan:
+                     * lng = "uz" → langData.uz
+                     * lng = "en" → langData.en
+                     * lng = "ru" → langData.ru
+                     * lng = "tr" → langData.tr
+                     */
+                    const gameLang =
+                      game.langData?.[lng] ||
+                      game.langData?.uz ||
+                      game.langData?.en ||
+                      game.langData?.ru ||
+                      game.langData?.tr;
+
+                    return (
+                      <option
+                        key={game._id}
+                        value={game._id}
+                        className="dark:bg-slate-900"
+                      >
+                        {gameLang?.title || "Nomsiz o'yin"} — ID: {game._id}
+                      </option>
+                    );
+                  })
+                )}
               </select>
             </div>
 
+            {/* RASMLAR */}
             <div className="space-y-2.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                <ImageIcon size={14} className="text-slate-400" /> Muqova
-                rasmlari ({activeLang.toUpperCase()})
+                <ImageIcon size={14} className="text-slate-400" />
+                Muqova rasmlari ({activeLang.toUpperCase()})
               </label>
 
               <input
@@ -462,12 +553,14 @@ export default function CreateNewsPage() {
                         alt={`Preview ${index}`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
+
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:opacity-100 transition-opacity pointer-events-none duration-200">
                         <Maximize2
                           size={16}
                           className="text-white drop-shadow-md"
                         />
                       </div>
+
                       <button
                         type="button"
                         onClick={(e) => removeFile(e, index)}
@@ -490,6 +583,7 @@ export default function CreateNewsPage() {
                 )}
               >
                 <Upload size={18} />
+
                 <span className="text-xs font-bold tracking-wide">
                   Rasm qoʻshish
                 </span>
@@ -497,19 +591,20 @@ export default function CreateNewsPage() {
             </div>
           </div>
 
+          {/* SUBMIT */}
           <button
             type="submit"
             disabled={isSubmitting}
             className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-sm tracking-wide text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/15 transition-all duration-200 disabled:opacity-50"
           >
             <Send size={16} />
+
             {isSubmitting
               ? uploadStatus || "Yuborilmoqda..."
               : "Yangilikni Yuborish"}
           </button>
         </div>
       </form>
-
       {/* MODAL */}
       {modalState.isOpen && (
         <div className="fixed inset-0 bg-black/80 z-[110] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200">
@@ -529,10 +624,12 @@ export default function CreateNewsPage() {
                   <AlertCircle size={28} />
                 )}
               </div>
+
               <div className="space-y-1">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                   {modalState.title}
                 </h3>
+
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                   {modalState.message}
                 </p>
@@ -554,7 +651,6 @@ export default function CreateNewsPage() {
           </div>
         </div>
       )}
-
       {/* LIGHTBOX MODAL */}
       {activePreviewImage && (
         <div
