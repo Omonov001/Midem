@@ -84,39 +84,6 @@ export default function CreateNewsPage() {
     tr: { title: "", content: "", banners: [] as BannerImage[] },
   });
 
-  // Tanlangan o'yinning ID'si
-
-  // Developerning haqiqiy o'yinlari
-  const [myGames, setMyGames] = useState<any[]>([]);
-  const [gamesLoading, setGamesLoading] = useState(true);
-
-  // Developer o'yinlarini API orqali olish
-  useEffect(() => {
-    const loadMyGames = async () => {
-      try {
-        setGamesLoading(true);
-
-        const response = await fetch("/api/developer/games");
-        const result = await response.json();
-
-        if (response.ok) {
-          setMyGames(result);
-        } else {
-          console.error(
-            "O'yin IDlarini yuklashda xatolik:",
-            result?.message || "Noma'lum xatolik",
-          );
-        }
-      } catch (error) {
-        console.error("O'yin IDlarini yuklashda xatolik:", error);
-      } finally {
-        setGamesLoading(false);
-      }
-    };
-
-    loadMyGames();
-  }, []);
-
   const handleTextChange = (
     lang: string,
     field: "title" | "content",

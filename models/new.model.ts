@@ -21,7 +21,7 @@ export interface INews extends Document {
     uz: ITranslation;
     ru: ITranslation;
     en: ITranslation;
-    tu: ITranslation;
+    tr: ITranslation;
   };
   createdAt: Date;
   updatedAt: Date;
@@ -71,7 +71,7 @@ const NewsSchema = new Schema<INews>(
       uz: { type: TranslationSchema, required: true },
       ru: { type: TranslationSchema, required: true },
       en: { type: TranslationSchema, required: true },
-      tu: { type: TranslationSchema, required: true },
+      tr: { type: TranslationSchema, required: true },
     },
   },
   {
