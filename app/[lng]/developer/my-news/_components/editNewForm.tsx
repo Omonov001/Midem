@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
@@ -8,7 +10,6 @@ import {
   Newspaper,
   Image as ImageIcon,
   Save,
-  Layers,
   Globe,
   Upload,
   X,
@@ -27,7 +28,7 @@ const LANGUAGES = [
   { code: "uz", label: "Ozbekcha" },
   { code: "ru", label: "Русский" },
   { code: "en", label: "English" },
-  { code: "tu", label: "Türkçe" },
+  { code: "tr", label: "Türkçe" },
 ];
 
 interface BannerImage {
@@ -50,8 +51,11 @@ const generateSlug = (text: string): string => {
 
 export default function EditNewsForm({ slug }: { slug: string }) {
   const router = useRouter();
+
   const [activeLang, setActiveLang] = useState("uz");
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [activePreviewImage, setActivePreviewImage] = useState<string | null>(
     null,
   );
@@ -75,55 +79,130 @@ export default function EditNewsForm({ slug }: { slug: string }) {
   });
 
   const [translations, setTranslations] = useState({
-    uz: { title: "", content: "", banners: [] as BannerImage[] },
-    ru: { title: "", content: "", banners: [] as BannerImage[] },
-    en: { title: "", content: "", banners: [] as BannerImage[] },
-    tu: { title: "", content: "", banners: [] as BannerImage[] },
+    uz: {
+      title: "",
+      content: "",
+      banners: [] as BannerImage[],
+    },
+    ru: {
+      title: "",
+      content: "",
+      banners: [] as BannerImage[],
+    },
+    en: {
+      title: "",
+      content: "",
+      banners: [] as BannerImage[],
+    },
+    tr: {
+      title: "",
+      content: "",
+      banners: [] as BannerImage[],
+    },
   });
 
-  // 1. Sahifa ochilganda slug boyicha malumotlarni bazadan yuklab kelish
+  // Sahifa ochilganda bazadagi eski rasmlarni alohida saqlaymiz.
+  // Keyin qaysi rasmlar o'chirilganini aniqlash uchun kerak.
+  const [originalTranslations, setOriginalTranslations] = useState({
+    uz: { banners: [] as string[] },
+    ru: { banners: [] as string[] },
+    en: { banners: [] as string[] },
+    tr: { banners: [] as string[] },
+  });
+
+  // ============================================================
+  // NEWS MA'LUMOTLARINI YUKLASH
+  // ============================================================
+
   useEffect(() => {
     const fetchNewsDetail = async () => {
       try {
         setIsLoading(true);
+
         const res = await fetch(`/api/news/${slug}`);
         const result = await res.json();
 
         if (result.success && result.data) {
           const item = result.data;
+
           setCurrentSlug(item.slug || "");
           setVisibility(item.visibility || "public");
 
-          // Serverdan kelgan banner URL larni BannerImage formatiga otkazish
           const formattedTranslations: any = {
-            uz: { title: "", content: "", banners: [] },
-            ru: { title: "", content: "", banners: [] },
-            en: { title: "", content: "", banners: [] },
-            tu: { title: "", content: "", banners: [] },
+            uz: {
+              title: "",
+              content: "",
+              banners: [],
+            },
+            ru: {
+              title: "",
+              content: "",
+              banners: [],
+            },
+            en: {
+              title: "",
+              content: "",
+              banners: [],
+            },
+            tr: {
+              title: "",
+              content: "",
+              banners: [],
+            },
+          };
+
+          const originalBanners: any = {
+            uz: {
+              banners: [],
+            },
+            ru: {
+              banners: [],
+            },
+            en: {
+              banners: [],
+            },
+            tr: {
+              banners: [],
+            },
           };
 
           if (item.translations) {
             for (const lang of Object.keys(item.translations)) {
+              // Faqat mavjud tillarni qabul qilamiz
+              if (!["uz", "ru", "en", "tr"].includes(lang)) {
+                continue;
+              }
+
               const langData = item.translations[lang];
-              const banners =
-                langData.banners?.map((url: string) => ({
-                  file: null,
-                  preview: url,
-                  url: url,
-                })) || [];
+
+              const bannerUrls: string[] = Array.isArray(langData.banners)
+                ? langData.banners
+                : [];
+
+              const banners: BannerImage[] = bannerUrls.map((url: string) => ({
+                file: null,
+                preview: url,
+                url,
+              }));
 
               formattedTranslations[lang] = {
                 title: langData.title || "",
                 content: langData.content || "",
                 banners,
               };
+
+              // Bazadagi original URL lar
+              originalBanners[lang] = {
+                banners: [...bannerUrls],
+              };
             }
           }
 
           setTranslations(formattedTranslations);
+          setOriginalTranslations(originalBanners);
         }
       } catch (error) {
-        console.error("Malumotni yuklashda xatolik:", error);
+        console.error("Ma'lumotni yuklashda xatolik:", error);
       } finally {
         setIsLoading(false);
       }
@@ -131,8 +210,14 @@ export default function EditNewsForm({ slug }: { slug: string }) {
 
     if (slug) {
       fetchNewsDetail();
+    } else {
+      setIsLoading(false);
     }
   }, [slug]);
+
+  // ============================================================
+  // TEXT O'ZGARTIRISH
+  // ============================================================
 
   const handleTextChange = (
     lang: string,
@@ -141,7 +226,10 @@ export default function EditNewsForm({ slug }: { slug: string }) {
   ) => {
     setTranslations((prev) => ({
       ...prev,
-      [lang]: { ...prev[lang as keyof typeof prev], [field]: value },
+      [lang]: {
+        ...prev[lang as keyof typeof prev],
+        [field]: value,
+      },
     }));
 
     if (lang === "uz" && field === "title") {
@@ -149,8 +237,13 @@ export default function EditNewsForm({ slug }: { slug: string }) {
     }
   };
 
+  // ============================================================
+  // RASM TANLASH
+  // ============================================================
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
+
     if (files && files.length > 0) {
       const newBanners: BannerImage[] = Array.from(files).map((file) => ({
         file,
@@ -159,27 +252,39 @@ export default function EditNewsForm({ slug }: { slug: string }) {
 
       setTranslations((prev) => ({
         ...prev,
+
         [activeLang]: {
           ...prev[activeLang as keyof typeof prev],
-          banners: [
-            ...prev[activeLang as keyof typeof prev].banners,
-            ...newBanners,
-          ],
+
+          // MUHIM:
+          // Eski rasmlarni qo'shmaymiz.
+          // Yangi rasmlar eski rasmlarning o'rniga keladi.
+          banners: newBanners,
         },
       }));
     }
-    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
+
+  // ============================================================
+  // RASMNI O'CHIRISH
+  // ============================================================
 
   const removeFile = (e: React.MouseEvent, indexToRemove: number) => {
     e.stopPropagation();
+
     setTranslations((prev) => {
       const currentBanners = prev[activeLang as keyof typeof prev].banners;
-      if (
-        currentBanners[indexToRemove].file &&
-        currentBanners[indexToRemove].preview
-      ) {
-        URL.revokeObjectURL(currentBanners[indexToRemove].preview);
+
+      const bannerToRemove = currentBanners[indexToRemove];
+
+      // Yangi tanlangan local fayl bo'lsa,
+      // browserdagi object URL ni tozalaymiz.
+      if (bannerToRemove?.file && bannerToRemove.preview) {
+        URL.revokeObjectURL(bannerToRemove.preview);
       }
 
       const filteredBanners = currentBanners.filter(
@@ -188,6 +293,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
 
       return {
         ...prev,
+
         [activeLang]: {
           ...prev[activeLang as keyof typeof prev],
           banners: filteredBanners,
@@ -196,37 +302,132 @@ export default function EditNewsForm({ slug }: { slug: string }) {
     });
   };
 
+  // ============================================================
+  // R2 DAN RASM O'CHIRISH
+  // ============================================================
+
+  const deleteR2Image = async (fileUrl: string) => {
+    try {
+      const PUBLIC_R2_DOMAIN = process.env.NEXT_PUBLIC_R2_DOMAIN || "";
+
+      const baseUrl = PUBLIC_R2_DOMAIN.replace(/\/$/, "");
+
+      if (!baseUrl || !fileUrl.startsWith(`${baseUrl}/`)) {
+        console.warn("R2 domain mos kelmadi:", fileUrl);
+
+        return;
+      }
+
+      // Masalan:
+      // https://r2.midem.uz/images/abc-test.png
+      //
+      // -> images/abc-test.png
+      const fileKey = fileUrl.slice(`${baseUrl}/`.length);
+
+      if (!fileKey) {
+        return;
+      }
+
+      const response = await fetch("/api/upload", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fileKey,
+        }),
+      });
+
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+
+        console.error(
+          "R2 rasmni o'chirishda xatolik:",
+          result?.error || response.status,
+        );
+      }
+    } catch (error) {
+      console.error("R2 rasmni o'chirishda xatolik:", error);
+    }
+  };
+
+  // ============================================================
+  // SUBMIT
+  // ============================================================
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       const finalTranslationsData: Record<string, any> = {};
+
       const PUBLIC_R2_DOMAIN = process.env.NEXT_PUBLIC_R2_DOMAIN || "";
+
       const baseUrl = PUBLIC_R2_DOMAIN.replace(/\/$/, "");
+
+      // Shu update davomida yangi upload qilingan
+      // rasmlarni saqlab boramiz.
+      const newlyUploadedUrls: string[] = [];
+
+      // ========================================================
+      // HAR BIR TIL
+      // ========================================================
 
       for (const lang of Object.keys(translations)) {
         const langData = translations[lang as keyof typeof translations];
+
         const bannerUrls: string[] = [];
 
+        // ======================================================
+        // RASMLAR
+        // ======================================================
+
         for (const banner of langData.banners) {
+          // ----------------------------------------------------
+          // YANGI RASM
+          // ----------------------------------------------------
+
           if (banner.file) {
             setUploadStatus(
               `[${lang.toUpperCase()}] Rasm R2 xotirasiga yuklanmoqda...`,
             );
 
+            // Tepadagi lib/upload.ts dagi
+            // handleGameUpload ishlatiladi.
             const uploadResult = await handleGameUpload(banner.file);
+
             if (!uploadResult.success || !uploadResult.fileKey) {
               throw new Error(
                 `[${lang.toUpperCase()}] Rasmni R2 ga yuklashda xatolik yuz berdi!`,
               );
             }
 
-            bannerUrls.push(`${baseUrl}/${uploadResult.fileKey}`);
-          } else if (banner.url) {
+            const imageUrl = `${baseUrl}/${uploadResult.fileKey}`;
+
+            bannerUrls.push(imageUrl);
+
+            // Agar keyin DB update xato bo'lsa,
+            // shu yangi rasmni o'chirish uchun.
+            newlyUploadedUrls.push(imageUrl);
+          }
+
+          // ----------------------------------------------------
+          // ESKI RASM
+          // ----------------------------------------------------
+          else if (banner.url) {
             bannerUrls.push(banner.url);
           }
         }
+
+        // ======================================================
+        // TRANSLATION
+        // ======================================================
 
         finalTranslationsData[lang] = {
           title: langData.title,
@@ -235,7 +436,11 @@ export default function EditNewsForm({ slug }: { slug: string }) {
         };
       }
 
-      setUploadStatus("Ozgarishlar saqlanmoqda...");
+      // ========================================================
+      // DATABASE UPDATE
+      // ========================================================
+
+      setUploadStatus("O'zgarishlar saqlanmoqda...");
 
       const payload = {
         slug: currentSlug,
@@ -246,28 +451,96 @@ export default function EditNewsForm({ slug }: { slug: string }) {
 
       const response = await fetch(`/api/news/${slug}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
 
       const result = await response.json();
-      if (result.success) {
-        setModalState({
-          isOpen: true,
-          type: "success",
-          title: "Muvaffaqiyatli yangilandi!",
-          message: "Yangilik malumotlari muvaffaqiyatli saqlandi.",
-        });
-      } else {
+
+      // ========================================================
+      // DATABASE UPDATE XATO
+      // ========================================================
+
+      if (!result.success) {
+        // DB saqlanmasa yangi upload qilingan
+        // rasmlarni R2 da tashlab ketmaymiz.
+        if (newlyUploadedUrls.length > 0) {
+          setUploadStatus("Saqlashda xatolik. Yangi rasmlar tozalanmoqda...");
+
+          for (const newImageUrl of newlyUploadedUrls) {
+            await deleteR2Image(newImageUrl);
+          }
+        }
+
         setModalState({
           isOpen: true,
           type: "error",
           title: "Xatolik yuz berdi",
-          message: result.message || "Nomalum xatolik yuz berdi.",
+          message: result.message || "Noma'lum xatolik yuz berdi.",
         });
+
+        return;
       }
+
+      // ========================================================
+      // ESKI RASMLARNI ANIQLASH
+      // ========================================================
+
+      const imagesToDelete: string[] = [];
+
+      for (const lang of Object.keys(originalTranslations)) {
+        const originalLang =
+          originalTranslations[lang as keyof typeof originalTranslations];
+
+        const finalLang = finalTranslationsData[lang];
+
+        if (!originalLang || !finalLang) {
+          continue;
+        }
+
+        const oldImages = originalLang.banners || [];
+
+        const newImages = finalLang.banners || [];
+
+        // Bazada oldin bor edi,
+        // lekin hozirgi listda yo'q.
+        for (const oldImage of oldImages) {
+          if (!newImages.includes(oldImage)) {
+            imagesToDelete.push(oldImage);
+          }
+        }
+      }
+
+      // Duplicate URL larni olib tashlaymiz.
+      const uniqueImagesToDelete = [...new Set(imagesToDelete)];
+
+      // ========================================================
+      // ESKI R2 RASMLARNI O'CHIRISH
+      // ========================================================
+
+      if (uniqueImagesToDelete.length > 0) {
+        setUploadStatus("Eski rasmlar R2 xotirasidan o'chirilmoqda...");
+
+        for (const oldImage of uniqueImagesToDelete) {
+          await deleteR2Image(oldImage);
+        }
+      }
+
+      // ========================================================
+      // SUCCESS
+      // ========================================================
+
+      setModalState({
+        isOpen: true,
+        type: "success",
+        title: "Muvaffaqiyatli yangilandi!",
+        message: "Yangilik ma'lumotlari muvaffaqiyatli saqlandi.",
+      });
     } catch (error: any) {
       console.error("Xatolik:", error);
+
       setModalState({
         isOpen: true,
         type: "error",
@@ -280,26 +553,44 @@ export default function EditNewsForm({ slug }: { slug: string }) {
     }
   };
 
+  // ============================================================
+  // MODAL CLOSE
+  // ============================================================
+
   const handleModalClose = () => {
     const isSuccess = modalState.type === "success";
-    setModalState((prev) => ({ ...prev, isOpen: false }));
+
+    setModalState((prev) => ({
+      ...prev,
+      isOpen: false,
+    }));
+
     if (isSuccess) {
       router.push("/developer/my-news");
     }
   };
 
+  // ============================================================
+  // LOADING
+  // ============================================================
+
   if (isLoading) {
     return (
       <div className="text-center py-32 flex flex-col items-center justify-center gap-3">
         <Loader2 className="animate-spin text-blue-500" size={36} />
+
         <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">
-          Malumotlar yuklanmoqda...
+          Ma'lumotlar yuklanmoqda...
         </p>
       </div>
     );
   }
 
   const currentLangData = translations[activeLang as keyof typeof translations];
+
+  // ============================================================
+  // UI
+  // ============================================================
 
   return (
     <div className="w-full ml-5 max-w-5xl my-16 mx-auto p-4 md:p-0 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
@@ -309,19 +600,23 @@ export default function EditNewsForm({ slug }: { slug: string }) {
           <h1 className="text-3xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300">
             Yangilikni Yangilash
           </h1>
+
           <p className="text-sm mt-1 text-slate-400 font-medium">
-            Mavjud yangilik malumotlarini tahrirlang va saqlang.
+            Mavjud yangilik ma'lumotlarini tahrirlang va saqlang.
           </p>
         </div>
       </div>
 
-      {/* TILLAR VA STATUS SATRI */}
+      {/* TILLAR VA STATUS */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
+        {/* LANGUAGES */}
         <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 dark:bg-white/5 rounded-2xl w-fit border border-slate-200/50 dark:border-white/5 overflow-x-auto max-w-full">
           {LANGUAGES.map((lang) => {
             const current =
               translations[lang.code as keyof typeof translations];
+
             const isFilled = current.title.length > 0;
+
             const hasImages = current.banners.length > 0;
 
             return (
@@ -331,6 +626,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
                 onClick={() => setActiveLang(lang.code)}
                 className={cn(
                   "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 shrink-0",
+
                   activeLang === lang.code
                     ? "bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 shadow-sm scale-102"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-white/40 dark:hover:bg-white/5",
@@ -343,7 +639,9 @@ export default function EditNewsForm({ slug }: { slug: string }) {
                     isFilled && "text-emerald-500",
                   )}
                 />
+
                 {lang.label}
+
                 {hasImages && (
                   <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-blue-500 text-white dark:bg-blue-600 rounded-md font-black">
                     {current.banners.length}
@@ -354,12 +652,14 @@ export default function EditNewsForm({ slug }: { slug: string }) {
           })}
         </div>
 
+        {/* VISIBILITY */}
         <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 dark:bg-white/5 rounded-2xl w-full sm:w-fit border border-slate-200/50 dark:border-white/5">
           <button
             type="button"
             onClick={() => setVisibility("public")}
             className={cn(
               "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 w-full sm:w-auto justify-center",
+
               visibility === "public"
                 ? "bg-white dark:bg-slate-950 text-emerald-600 dark:text-emerald-400 shadow-sm"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
@@ -368,11 +668,13 @@ export default function EditNewsForm({ slug }: { slug: string }) {
             <Eye size={14} />
             Ommaviy
           </button>
+
           <button
             type="button"
             onClick={() => setVisibility("private")}
             className={cn(
               "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all duration-200 w-full sm:w-auto justify-center",
+
               visibility === "private"
                 ? "bg-white dark:bg-slate-950 text-amber-600 dark:text-amber-400 shadow-sm"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
@@ -389,16 +691,21 @@ export default function EditNewsForm({ slug }: { slug: string }) {
         onSubmit={handleSubmit}
         className="grid gap-6 lg:grid-cols-3 items-start"
       >
+        {/* LEFT */}
         <div className="lg:col-span-2 space-y-6 p-6 sm:p-8 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-100/50 dark:shadow-none">
+          {/* ACTIVE LANGUAGE */}
           <div className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest bg-blue-500/10 px-3 py-1.5 rounded-xl w-fit">
             Kiritilayotgan til:{" "}
             {LANGUAGES.find((l) => l.code === activeLang)?.label}
           </div>
 
+          {/* TITLE */}
           <div className="space-y-2.5">
             <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-              <Newspaper size={16} className="text-slate-400" /> Sarlavha
+              <Newspaper size={16} className="text-slate-400" />
+              Sarlavha
             </label>
+
             <input
               type="text"
               required={activeLang === "uz"}
@@ -415,11 +722,13 @@ export default function EditNewsForm({ slug }: { slug: string }) {
             />
           </div>
 
+          {/* SLUG */}
           <div className="space-y-2.5">
             <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-              <LinkIcon size={16} className="text-slate-400" /> URL Manzili
-              (Slug)
+              <LinkIcon size={16} className="text-slate-400" />
+              URL Manzili (Slug)
             </label>
+
             <input
               type="text"
               required
@@ -434,10 +743,12 @@ export default function EditNewsForm({ slug }: { slug: string }) {
             />
           </div>
 
+          {/* CONTENT */}
           <div className="space-y-2.5">
             <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
               Maqola batafsil matni
             </label>
+
             <textarea
               required={activeLang === "uz"}
               rows={9}
@@ -445,7 +756,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
               onChange={(e) =>
                 handleTextChange(activeLang, "content", e.target.value)
               }
-              placeholder="Bu yerga batafsil malumotlarni yozishingiz mumkin..."
+              placeholder="Bu yerga batafsil ma'lumotlarni yozishingiz mumkin..."
               className={cn(
                 "w-full px-4 py-3.5 rounded-xl border text-sm font-medium transition-all duration-200 outline-none resize-none bg-slate-50/50 dark:bg-white/5",
                 "border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:shadow-sm",
@@ -455,12 +766,13 @@ export default function EditNewsForm({ slug }: { slug: string }) {
           </div>
         </div>
 
+        {/* RIGHT */}
         <div className="space-y-6">
           <div className="p-6 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-100/50 dark:shadow-none space-y-5">
             <div className="space-y-2.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                <ImageIcon size={14} className="text-slate-400" /> Muqova
-                rasmlari ({activeLang.toUpperCase()})
+                <ImageIcon size={14} className="text-slate-400" />
+                Muqova rasmlari ({activeLang.toUpperCase()})
               </label>
 
               <input
@@ -472,6 +784,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
                 className="hidden"
               />
 
+              {/* PREVIEW */}
               {currentLangData.banners.length > 0 && (
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   {currentLangData.banners.map((banner, index) => (
@@ -485,12 +798,14 @@ export default function EditNewsForm({ slug }: { slug: string }) {
                         alt={`Preview ${index}`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
+
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:opacity-100 transition-opacity pointer-events-none duration-200">
                         <Maximize2
                           size={16}
                           className="text-white drop-shadow-md"
                         />
                       </div>
+
                       <button
                         type="button"
                         onClick={(e) => removeFile(e, index)}
@@ -503,6 +818,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
                 </div>
               )}
 
+              {/* UPLOAD BUTTON */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -513,6 +829,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
                 )}
               >
                 <Upload size={18} />
+
                 <span className="text-xs font-bold tracking-wide">
                   Rasm qoʻshish
                 </span>
@@ -520,12 +837,14 @@ export default function EditNewsForm({ slug }: { slug: string }) {
             </div>
           </div>
 
+          {/* SAVE */}
           <button
             type="submit"
             disabled={isSubmitting}
             className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-sm tracking-wide text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/15 transition-all duration-200 disabled:opacity-50"
           >
             <Save size={16} />
+
             {isSubmitting ? uploadStatus || "Yangilanmoqda..." : "Yangilash"}
           </button>
         </div>
@@ -539,6 +858,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
               <div
                 className={cn(
                   "p-3 rounded-2xl shrink-0",
+
                   modalState.type === "success"
                     ? "bg-emerald-500/10 text-emerald-500 dark:bg-emerald-500/20"
                     : "bg-red-500/10 text-red-500 dark:bg-red-500/20",
@@ -550,10 +870,12 @@ export default function EditNewsForm({ slug }: { slug: string }) {
                   <AlertCircle size={28} />
                 )}
               </div>
+
               <div className="space-y-1">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                   {modalState.title}
                 </h3>
+
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                   {modalState.message}
                 </p>
@@ -565,6 +887,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
               onClick={handleModalClose}
               className={cn(
                 "w-full py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white shadow-md transition-all duration-200",
+
                 modalState.type === "success"
                   ? "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20"
                   : "bg-blue-600 hover:bg-blue-500 shadow-blue-500/20",
@@ -576,7 +899,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
         </div>
       )}
 
-      {/* LIGHTBOX MODAL */}
+      {/* LIGHTBOX */}
       {activePreviewImage && (
         <div
           onClick={() => setActivePreviewImage(null)}

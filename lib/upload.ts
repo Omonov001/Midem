@@ -45,3 +45,35 @@ export const handleGameUpload = async (file: File) => {
     };
   }
 };
+
+// Eski rasmni R2 dan o'chirish
+export const handleImageDelete = async (fileKey: string) => {
+  try {
+    const res = await fetch("/api/upload", {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fileKey,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || "Rasmni o'chirib bo'lmadi");
+    }
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Rasmni o'chirishda xatolik:", error);
+
+    return {
+      success: false,
+      error,
+    };
+  }
+};

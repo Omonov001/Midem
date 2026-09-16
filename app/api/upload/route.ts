@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { r2 } from "@/lib/r2";
+import { currentUser } from "@clerk/nextjs/server";
 import crypto from "crypto";
 
 // ============================================================
@@ -109,6 +110,62 @@ export async function POST(req: Request) {
 
     return NextResponse.json(
       { error: "Yuklash havolasini yaratishda xatolik" },
+      { status: 500 },
+    );
+  }
+}
+
+// ============================================================
+// DELETE /api/upload
+// ============================================================
+
+export async function DELETE(req: Request) {
+  try {
+    const user = await currentUser();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Tizimga kirmagansiz!" },
+        { status: 401 },
+      );
+    }
+
+    const { fileKey } = await req.json();
+
+    if (!fileKey || typeof fileKey !== "string") {
+      return NextResponse.json(
+        { error: "Fayl kaliti ko'rsatilmagan" },
+        { status: 400 },
+      );
+    }
+
+    // Faqat news/image fayllarini o'chirishga ruxsat
+    if (!fileKey.startsWith("images/")) {
+      return NextResponse.json(
+        { error: "Bu faylni o'chirishga ruxsat yo'q" },
+        { status: 403 },
+      );
+    }
+
+    const command = new DeleteObjectCommand({
+      Bucket: "midem-assets",
+      Key: fileKey,
+    });
+
+    await r2.send(command);
+
+    return NextResponse.json({
+      success: true,
+      message: "Eski rasm R2 dan o'chirildi",
+    });
+  } catch (error) {
+    console.error("Delete error:", error);
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Rasmni R2 dan o'chirishda xatolik",
+      },
       { status: 500 },
     );
   }
