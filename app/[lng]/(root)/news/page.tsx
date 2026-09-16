@@ -7,6 +7,7 @@ import FillterData from "@/components/fillters/fillter-data";
 import Link from "next/link";
 import useTranslate from "@/hooks/use-translate";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 
 interface NewsItem {
   _id: string;
@@ -16,6 +17,7 @@ interface NewsItem {
     [key: string]: {
       title?: string;
       description?: string;
+      content?: string;
       banners?: string[];
     };
   };
@@ -24,35 +26,48 @@ interface NewsItem {
 
 function Page() {
   const { resolvedTheme } = useTheme();
+  const pathname = usePathname();
+
   const [mounted, setMounted] = useState(false);
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState("all");
+
   const t = useTranslate();
 
-  // Hozirgi tanlangan tilni aniqlash (hook qanday ishlashiga qarab moslaysiz, masalan 'uz')
-  // Agar useTranslate ichidan tilni olib bo'lmasa, localStorage yoki path'dan olinadi:
-  const currentLang = "uz";
+  // URL'dan hozirgi tilni olamiz
+  // /uz/news -> uz
+  // /ru/news -> ru
+  // /en/news -> en
+  // /tr/news -> tr
+  const currentLang = pathname?.split("/")[1] || "uz";
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
 
-  // API dan yangiliklarni tortib kelish funksiyasi
+  // API dan yangiliklarni olish
   useEffect(() => {
     if (!mounted) return;
 
     async function fetchNews() {
       try {
         setLoading(true);
+
         const res = await fetch(`/api/news/public?filter=${activeFilter}`);
+
         const result = await res.json();
+
         if (result.success) {
           setNews(result.data);
+        } else {
+          setNews([]);
         }
       } catch (error) {
         console.error("Yangiliklarni yuklashda xatolik:", error);
+
+        setNews([]);
       } finally {
         setLoading(false);
       }
@@ -62,6 +77,7 @@ function Page() {
   }, [mounted, activeFilter]);
 
   if (!mounted) return null;
+
   const isDark = resolvedTheme === "dark";
 
   return (
@@ -72,7 +88,7 @@ function Page() {
       )}
     >
       <div className="max-w-7xl mx-auto flex flex-col items-center">
-        {/* HEADER SECTION */}
+        {/* HEADER */}
         <section className="flex flex-col items-center text-center space-y-6 mb-16">
           <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tighter uppercase">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-500 to-blue-400">
@@ -90,18 +106,12 @@ function Page() {
           </p>
         </section>
 
-        {/* Filter Kartochkalari (Bosilganda activeFilter o'zgaradi) */}
-        <div
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          onClick={(e: any) => {
-            // FillterCards komponentingiz qanday ishlashiga qarab bu yerda klikni ushlashingiz mumkin
-            // Masalan, bosilgan tugma bo'yicha activeFilter ni 'all', 'best', 'newest', 'oldest' ga o'zgartirasiz
-          }}
-        >
-          <FillterData className="mb-5" />
+        {/* FILTER */}
+        <div className="mb-5">
+          <FillterData />
         </div>
 
-        {/* LOADING & EMPTY STATES */}
+        {/* LOADING */}
         {loading ? (
           <div className="py-20 text-center font-bold text-lg text-blue-500 animate-pulse">
             Yuklanmoqda...
@@ -111,20 +121,27 @@ function Page() {
             Hozircha tasdiqlangan yangiliklar mavjud emas.
           </div>
         ) : (
-          /* NEWS GRID SECTION */
           <section className="w-full pb-20">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {news.map((item) => {
-                // Til bo'yicha tarjimani olish (agar tanlangan til bo'lmasa, uz yoki birinchi topilgan tilni oladi)
+                // Avval URL'dagi tilni qidiramiz
+                // Masalan /ru/news bo'lsa translations.ru
                 const translation =
-                  item.translations[currentLang] ||
-                  item.translations["uz"] ||
-                  Object.values(item.translations)[0] ||
+                  item.translations?.[currentLang] ||
+                  item.translations?.["uz"] ||
+                  Object.values(item.translations || {})[0] ||
                   {};
 
                 const title = translation.title || "Sarlavha yo'q";
+
+                // MUHIM:
+                // News detail page'da content ishlatiladi.
+                // Agar description bo'lmasa content'dan olamiz.
                 const description =
-                  translation.description || "Matn mavjud emas...";
+                  translation.description ||
+                  translation.content ||
+                  "Matn mavjud emas...";
+
                 const bannerImg =
                   translation.banners && translation.banners.length > 0
                     ? translation.banners[0]
@@ -132,14 +149,26 @@ function Page() {
 
                 const formattedDate = new Date(
                   item.createdAt,
-                ).toLocaleDateString("uz-UZ", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                });
+                ).toLocaleDateString(
+                  currentLang === "ru"
+                    ? "ru-RU"
+                    : currentLang === "en"
+                      ? "en-US"
+                      : currentLang === "tr"
+                        ? "tr-TR"
+                        : "uz-UZ",
+                  {
+                    day: "numeric",
+                    month: "long",
+                    year: "numeric",
+                  },
+                );
 
                 return (
-                  <Link key={item._id} href={`/news/${item.slug}`}>
+                  <Link
+                    key={item._id}
+                    href={`/${currentLang}/news/${item.slug}`}
+                  >
                     <div
                       className={cn(
                         "group relative p-6 rounded-[2.5rem] border backdrop-blur-xl transition-all duration-500 hover:-translate-y-2",
@@ -148,7 +177,7 @@ function Page() {
                           : "bg-white border-slate-200 shadow-[0_20px_50px_rgba(0,0,0,0.05)] hover:shadow-blue-500/10",
                       )}
                     >
-                      {/* Image Box */}
+                      {/* IMAGE */}
                       <div
                         className={cn(
                           "w-full aspect-video rounded-3xl mb-6 overflow-hidden relative",
@@ -166,21 +195,22 @@ function Page() {
                           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-purple-600/20 group-hover:opacity-40 transition-opacity" />
                         )}
 
-                        {/* Badge */}
                         <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-blue-600 text-[10px] font-bold text-white uppercase tracking-widest">
                           Yangilik
                         </div>
                       </div>
 
-                      {/* Content */}
+                      {/* CONTENT */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-2">
                           <div className="h-1 w-8 bg-blue-500 rounded-full" />
+
                           <span className="text-xs font-bold text-blue-500 uppercase tracking-tighter">
                             {item.selectedGame || "Oyin Olami"}
                           </span>
                         </div>
 
+                        {/* TITLE */}
                         <h3
                           className={cn(
                             "text-xl font-extrabold leading-tight line-clamp-2 transition-colors",
@@ -192,15 +222,17 @@ function Page() {
                           {title}
                         </h3>
 
+                        {/* DESCRIPTION */}
                         <p
                           className={cn(
-                            "text-sm line-clamp-2",
+                            "text-sm line-clamp-3 leading-relaxed",
                             isDark ? "text-slate-400" : "text-slate-500",
                           )}
                         >
                           {description}
                         </p>
 
+                        {/* DATE */}
                         <div
                           className={cn(
                             "flex justify-between items-center pt-4 border-t",
@@ -216,12 +248,7 @@ function Page() {
                             {formattedDate}
                           </span>
 
-                          <span
-                            className={cn(
-                              "text-xs font-black uppercase tracking-widest transition-all",
-                              "text-blue-600 hover:text-blue-500 underline underline-offset-4",
-                            )}
-                          >
+                          <span className="text-xs font-black uppercase tracking-widest text-blue-600 hover:text-blue-500 underline underline-offset-4">
                             Oqish
                           </span>
                         </div>
@@ -235,9 +262,10 @@ function Page() {
         )}
       </div>
 
-      {/* Background Decor (Glow) */}
+      {/* BACKGROUND */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 pointer-events-none">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full" />
+
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full" />
       </div>
     </main>
