@@ -1,9 +1,11 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import {
   Newspaper,
   Image as ImageIcon,
@@ -27,7 +29,7 @@ const LANGUAGES = [
   { code: "uz", label: "Ozbekcha" },
   { code: "ru", label: "Русский" },
   { code: "en", label: "English" },
-  { code: "tu", label: "Türkçe" },
+  { code: "tr", label: "Türkçe" },
 ];
 
 interface BannerImage {
@@ -50,6 +52,8 @@ const generateSlug = (text: string): string => {
 
 export default function EditNewsForm({ slug }: { slug: string }) {
   const router = useRouter();
+  const lng = useLocale();
+
   const [activeLang, setActiveLang] = useState("uz");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activePreviewImage, setActivePreviewImage] = useState<string | null>(
@@ -78,41 +82,73 @@ export default function EditNewsForm({ slug }: { slug: string }) {
     uz: { title: "", content: "", banners: [] as BannerImage[] },
     ru: { title: "", content: "", banners: [] as BannerImage[] },
     en: { title: "", content: "", banners: [] as BannerImage[] },
-    tu: { title: "", content: "", banners: [] as BannerImage[] },
+    tr: { title: "", content: "", banners: [] as BannerImage[] },
   });
 
-  const [selectedGame, setSelectedGame] = useState("");
+  // Bu yerda game ID saqlanadi
+  const [selectedGameId, setSelectedGameId] = useState("");
 
-  const myGames = [
-    { id: "1", title: "Shadowbound: Chronicle" },
-    { id: "2", title: "Cyber Neon: Drift" },
-  ];
+  // Developerning o'yinlari shu yerga yuklanadi
+  const [myGames, setMyGames] = useState<any[]>([]);
+  const [gamesLoading, setGamesLoading] = useState(true);
 
-  // 1. Sahifa ochilganda slug boyicha malumotlarni bazadan yuklab kelish
+  // Developer o'yinlarini yuklash
+  useEffect(() => {
+    const loadMyGames = async () => {
+      try {
+        setGamesLoading(true);
+
+        const response = await fetch("/api/developer/games");
+        const result = await response.json();
+
+        if (response.ok) {
+          setMyGames(result);
+        } else {
+          console.error(
+            "O'yinlarni yuklashda xatolik:",
+            result?.message || "Noma'lum xatolik",
+          );
+        }
+      } catch (error) {
+        console.error("O'yinlarni yuklashda xatolik:", error);
+      } finally {
+        setGamesLoading(false);
+      }
+    };
+
+    loadMyGames();
+  }, []);
+
+  // 1. Sahifa ochilganda slug bo'yicha ma'lumotlarni bazadan yuklab kelish
   useEffect(() => {
     const fetchNewsDetail = async () => {
       try {
         setIsLoading(true);
+
         const res = await fetch(`/api/news/${slug}`);
         const result = await res.json();
 
         if (result.success && result.data) {
           const item = result.data;
+
           setCurrentSlug(item.slug || "");
           setVisibility(item.visibility || "public");
-          setSelectedGame(item.selectedGame || "");
 
-          // Serverdan kelgan banner URL larni BannerImage formatiga otkazish
+          // Bazadagi selectedGame — game ID
+          setSelectedGameId(item.selectedGame || "");
+
+          // Serverdan kelgan banner URL larni BannerImage formatiga o'tkazish
           const formattedTranslations: any = {
             uz: { title: "", content: "", banners: [] },
             ru: { title: "", content: "", banners: [] },
             en: { title: "", content: "", banners: [] },
-            tu: { title: "", content: "", banners: [] },
+            tr: { title: "", content: "", banners: [] },
           };
 
           if (item.translations) {
             for (const lang of Object.keys(item.translations)) {
               const langData = item.translations[lang];
+
               const banners =
                 langData.banners?.map((url: string) => ({
                   file: null,
@@ -131,7 +167,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
           setTranslations(formattedTranslations);
         }
       } catch (error) {
-        console.error("Malumotni yuklashda xatolik:", error);
+        console.error("Ma'lumotni yuklashda xatolik:", error);
       } finally {
         setIsLoading(false);
       }
@@ -159,6 +195,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
+
     if (files && files.length > 0) {
       const newBanners: BannerImage[] = Array.from(files).map((file) => ({
         file,
@@ -176,13 +213,18 @@ export default function EditNewsForm({ slug }: { slug: string }) {
         },
       }));
     }
-    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const removeFile = (e: React.MouseEvent, indexToRemove: number) => {
     e.stopPropagation();
+
     setTranslations((prev) => {
       const currentBanners = prev[activeLang as keyof typeof prev].banners;
+
       if (
         currentBanners[indexToRemove].file &&
         currentBanners[indexToRemove].preview
@@ -215,6 +257,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
 
       for (const lang of Object.keys(translations)) {
         const langData = translations[lang as keyof typeof translations];
+
         const bannerUrls: string[] = [];
 
         for (const banner of langData.banners) {
@@ -224,6 +267,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
             );
 
             const uploadResult = await handleGameUpload(banner.file);
+
             if (!uploadResult.success || !uploadResult.fileKey) {
               throw new Error(
                 `[${lang.toUpperCase()}] Rasmni R2 ga yuklashda xatolik yuz berdi!`,
@@ -243,11 +287,14 @@ export default function EditNewsForm({ slug }: { slug: string }) {
         };
       }
 
-      setUploadStatus("Ozgarishlar saqlanmoqda...");
+      setUploadStatus("O'zgarishlar saqlanmoqda...");
 
       const payload = {
         slug: currentSlug,
-        selectedGame: selectedGame || undefined,
+
+        // MongoDB'dagi selectedGame maydoniga GAME ID yuboriladi
+        selectedGame: selectedGameId || undefined,
+
         visibility,
         request: "requested",
         translations: finalTranslationsData,
@@ -255,28 +302,32 @@ export default function EditNewsForm({ slug }: { slug: string }) {
 
       const response = await fetch(`/api/news/${slug}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
       });
 
       const result = await response.json();
+
       if (result.success) {
         setModalState({
           isOpen: true,
           type: "success",
           title: "Muvaffaqiyatli yangilandi!",
-          message: "Yangilik malumotlari muvaffaqiyatli saqlandi.",
+          message: "Yangilik ma'lumotlari muvaffaqiyatli saqlandi.",
         });
       } else {
         setModalState({
           isOpen: true,
           type: "error",
           title: "Xatolik yuz berdi",
-          message: result.message || "Nomalum xatolik yuz berdi.",
+          message: result.message || "Noma'lum xatolik yuz berdi.",
         });
       }
     } catch (error: any) {
       console.error("Xatolik:", error);
+
       setModalState({
         isOpen: true,
         type: "error",
@@ -291,7 +342,12 @@ export default function EditNewsForm({ slug }: { slug: string }) {
 
   const handleModalClose = () => {
     const isSuccess = modalState.type === "success";
-    setModalState((prev) => ({ ...prev, isOpen: false }));
+
+    setModalState((prev) => ({
+      ...prev,
+      isOpen: false,
+    }));
+
     if (isSuccess) {
       router.push("/developer/my-news");
     }
@@ -300,9 +356,10 @@ export default function EditNewsForm({ slug }: { slug: string }) {
   if (isLoading) {
     return (
       <div className="text-center py-32 flex flex-col items-center justify-center gap-3">
+        {" "}
         <Loader2 className="animate-spin text-blue-500" size={36} />
         <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">
-          Malumotlar yuklanmoqda...
+          Ma'lumotlar yuklanmoqda...
         </p>
       </div>
     );
@@ -312,24 +369,26 @@ export default function EditNewsForm({ slug }: { slug: string }) {
 
   return (
     <div className="w-full ml-5 max-w-5xl my-16 mx-auto p-4 md:p-0 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
-      {/* HEADER */}
+      {/* HEADER */}{" "}
       <div className="flex flex-col gap-1">
+        {" "}
         <div>
+          {" "}
           <h1 className="text-3xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300">
-            Yangilikni Yangilash
+            Yangilikni Yangilash{" "}
           </h1>
           <p className="text-sm mt-1 text-slate-400 font-medium">
-            Mavjud yangilik malumotlarini tahrirlang va saqlang.
+            Mavjud yangilik ma'lumotlarini tahrirlang va saqlang.
           </p>
         </div>
       </div>
-
       {/* TILLAR VA STATUS SATRI */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
         <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 dark:bg-white/5 rounded-2xl w-fit border border-slate-200/50 dark:border-white/5 overflow-x-auto max-w-full">
           {LANGUAGES.map((lang) => {
             const current =
               translations[lang.code as keyof typeof translations];
+
             const isFilled = current.title.length > 0;
             const hasImages = current.banners.length > 0;
 
@@ -352,7 +411,9 @@ export default function EditNewsForm({ slug }: { slug: string }) {
                     isFilled && "text-emerald-500",
                   )}
                 />
+
                 {lang.label}
+
                 {hasImages && (
                   <span className="ml-1 px-1.5 py-0.5 text-[10px] bg-blue-500 text-white dark:bg-blue-600 rounded-md font-black">
                     {current.banners.length}
@@ -377,6 +438,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
             <Eye size={14} />
             Ommaviy
           </button>
+
           <button
             type="button"
             onClick={() => setVisibility("private")}
@@ -392,7 +454,6 @@ export default function EditNewsForm({ slug }: { slug: string }) {
           </button>
         </div>
       </div>
-
       {/* FORMA */}
       <form
         onSubmit={handleSubmit}
@@ -406,8 +467,10 @@ export default function EditNewsForm({ slug }: { slug: string }) {
 
           <div className="space-y-2.5">
             <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-              <Newspaper size={16} className="text-slate-400" /> Sarlavha
+              <Newspaper size={16} className="text-slate-400" />
+              Sarlavha
             </label>
+
             <input
               type="text"
               required={activeLang === "uz"}
@@ -426,9 +489,10 @@ export default function EditNewsForm({ slug }: { slug: string }) {
 
           <div className="space-y-2.5">
             <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-              <LinkIcon size={16} className="text-slate-400" /> URL Manzili
-              (Slug)
+              <LinkIcon size={16} className="text-slate-400" />
+              URL Manzili (Slug)
             </label>
+
             <input
               type="text"
               required
@@ -447,6 +511,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
             <label className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-300">
               Maqola batafsil matni
             </label>
+
             <textarea
               required={activeLang === "uz"}
               rows={9}
@@ -454,7 +519,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
               onChange={(e) =>
                 handleTextChange(activeLang, "content", e.target.value)
               }
-              placeholder="Bu yerga batafsil malumotlarni yozishingiz mumkin..."
+              placeholder="Bu yerga batafsil ma'lumotlarni yozishingiz mumkin..."
               className={cn(
                 "w-full px-4 py-3.5 rounded-xl border text-sm font-medium transition-all duration-200 outline-none resize-none bg-slate-50/50 dark:bg-white/5",
                 "border-slate-200 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:shadow-sm",
@@ -466,35 +531,54 @@ export default function EditNewsForm({ slug }: { slug: string }) {
 
         <div className="space-y-6">
           <div className="p-6 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-100/50 dark:shadow-none space-y-5">
+            {/* GAME SELECT */}
             <div className="space-y-2.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                <Layers size={14} className="text-slate-400" /> Tegishli Oʻyin
-                (Ixtiyoriy)
+                <Layers size={14} className="text-slate-400" />
+                Tegishli Oʻyin (Ixtiyoriy)
               </label>
+
               <select
-                value={selectedGame}
-                onChange={(e) => setSelectedGame(e.target.value)}
+                value={selectedGameId}
+                onChange={(e) => setSelectedGameId(e.target.value)}
                 className="w-full px-4 py-3.5 rounded-xl border text-sm font-medium bg-slate-50/50 dark:bg-slate-900 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all duration-200"
               >
                 <option value="" className="dark:bg-slate-900">
                   Oyin tanlanmagan (Umumiy yangilik)
                 </option>
-                {myGames.map((game) => (
-                  <option
-                    key={game.id}
-                    value={game.title}
-                    className="dark:bg-slate-900"
-                  >
-                    {game.title}
+
+                {gamesLoading ? (
+                  <option value="" disabled className="dark:bg-slate-900">
+                    O'yinlar yuklanmoqda...
                   </option>
-                ))}
+                ) : (
+                  myGames.map((game) => {
+                    // lng bo'yicha title olinadi
+                    const gameLang =
+                      game.langData?.[lng] ||
+                      game.langData?.uz ||
+                      game.langData?.en ||
+                      game.langData?.ru ||
+                      game.langData?.tr;
+
+                    return (
+                      <option
+                        key={game._id}
+                        value={game._id}
+                        className="dark:bg-slate-900"
+                      >
+                        {gameLang?.title || "Nomsiz o'yin"}
+                      </option>
+                    );
+                  })
+                )}
               </select>
             </div>
 
             <div className="space-y-2.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                <ImageIcon size={14} className="text-slate-400" /> Muqova
-                rasmlari ({activeLang.toUpperCase()})
+                <ImageIcon size={14} className="text-slate-400" />
+                Muqova rasmlari ({activeLang.toUpperCase()})
               </label>
 
               <input
@@ -519,12 +603,14 @@ export default function EditNewsForm({ slug }: { slug: string }) {
                         alt={`Preview ${index}`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
+
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center group-hover:opacity-100 transition-opacity pointer-events-none duration-200">
                         <Maximize2
                           size={16}
                           className="text-white drop-shadow-md"
                         />
                       </div>
+
                       <button
                         type="button"
                         onClick={(e) => removeFile(e, index)}
@@ -547,6 +633,7 @@ export default function EditNewsForm({ slug }: { slug: string }) {
                 )}
               >
                 <Upload size={18} />
+
                 <span className="text-xs font-bold tracking-wide">
                   Rasm qoʻshish
                 </span>
@@ -560,11 +647,11 @@ export default function EditNewsForm({ slug }: { slug: string }) {
             className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-sm tracking-wide text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/15 transition-all duration-200 disabled:opacity-50"
           >
             <Save size={16} />
+
             {isSubmitting ? uploadStatus || "Yangilanmoqda..." : "Yangilash"}
           </button>
         </div>
       </form>
-
       {/* MODAL */}
       {modalState.isOpen && (
         <div className="fixed inset-0 bg-black/80 z-[110] flex items-center justify-center p-4 backdrop-blur-md animate-in fade-in duration-200">
@@ -584,10 +671,12 @@ export default function EditNewsForm({ slug }: { slug: string }) {
                   <AlertCircle size={28} />
                 )}
               </div>
+
               <div className="space-y-1">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                   {modalState.title}
                 </h3>
+
                 <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                   {modalState.message}
                 </p>
@@ -609,7 +698,6 @@ export default function EditNewsForm({ slug }: { slug: string }) {
           </div>
         </div>
       )}
-
       {/* LIGHTBOX MODAL */}
       {activePreviewImage && (
         <div
