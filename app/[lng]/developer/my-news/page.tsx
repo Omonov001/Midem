@@ -28,7 +28,7 @@ const LANGUAGES = [
   { code: "uz", label: "Ozbekcha" },
   { code: "ru", label: "Русский" },
   { code: "en", label: "English" },
-  { code: "tu", label: "Türkçe" },
+  { code: "tr", label: "Türkçe" },
 ];
 
 export default function MyNewsPage() {
