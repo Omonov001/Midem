@@ -438,7 +438,7 @@ export default function MyGamesPage() {
                       )}
                     >
                       <Coins size={11} />
-                      {game.priceType === "free" ? "Tekin" : game.price}
+                      {game.priceType === "free" ? "Tekin" : `${game.price}$`}
                     </span>
                   </div>
                 </div>
