@@ -11,7 +11,6 @@ interface ITranslation {
 
 export interface INews extends Document {
   slug: string;
-  selectedGame?: mongoose.Types.ObjectId;
   authorId: ObjectId;
   visibility: VisibilityType;
   request: RequestStatusType;
@@ -43,11 +42,7 @@ const NewsSchema = new Schema<INews>(
       lowercase: true,
       trim: true,
     },
-    selectedGame: {
-      type: Schema.Types.ObjectId,
-      ref: "Game",
-      required: false,
-    },
+
     authorId: {
       type: Schema.Types.ObjectId,
       ref: "User",

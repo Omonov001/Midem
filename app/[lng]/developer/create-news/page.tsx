@@ -85,7 +85,6 @@ export default function CreateNewsPage() {
   });
 
   // Tanlangan o'yinning ID'si
-  const [selectedGameId, setSelectedGameId] = useState("");
 
   // Developerning haqiqiy o'yinlari
   const [myGames, setMyGames] = useState<any[]>([]);
@@ -245,7 +244,6 @@ export default function CreateNewsPage() {
         slug: generatedSlug,
 
         // Bu yerda o'yinning o'zi emas, uning ID'si yuboriladi
-        selectedGame: selectedGameId || undefined,
 
         visibility,
         request: "requested",
@@ -472,58 +470,6 @@ export default function CreateNewsPage() {
 
         <div className="space-y-6">
           <div className="p-6 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-3xl border border-slate-200 dark:border-white/5 shadow-xl shadow-slate-100/50 dark:shadow-none space-y-5">
-            {/* TEGISHLI O'YIN ID */}
-            <div className="space-y-2.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                <Layers size={14} className="text-slate-400" />
-                Tegishli Oʻyin ID (Ixtiyoriy)
-              </label>
-
-              <select
-                value={selectedGameId}
-                onChange={(e) => setSelectedGameId(e.target.value)}
-                className="w-full px-4 py-3.5 rounded-xl border text-sm font-medium bg-slate-50/50 dark:bg-slate-900 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all duration-200"
-              >
-                <option value="" className="dark:bg-slate-900">
-                  O'yin tanlanmagan (Umumiy yangilik)
-                </option>
-
-                {gamesLoading ? (
-                  <option value="" disabled className="dark:bg-slate-900">
-                    O'yin IDlari yuklanmoqda...
-                  </option>
-                ) : (
-                  myGames.map((game) => {
-                    /*
-                     * lng orqali o'yinning shu tildagi nomini olamiz.
-                     *
-                     * Masalan:
-                     * lng = "uz" → langData.uz
-                     * lng = "en" → langData.en
-                     * lng = "ru" → langData.ru
-                     * lng = "tr" → langData.tr
-                     */
-                    const gameLang =
-                      game.langData?.[lng] ||
-                      game.langData?.uz ||
-                      game.langData?.en ||
-                      game.langData?.ru ||
-                      game.langData?.tr;
-
-                    return (
-                      <option
-                        key={game._id}
-                        value={game._id}
-                        className="dark:bg-slate-900"
-                      >
-                        {gameLang?.title || "Nomsiz o'yin"} — ID: {game._id}
-                      </option>
-                    );
-                  })
-                )}
-              </select>
-            </div>
-
             {/* RASMLAR */}
             <div className="space-y-2.5">
               <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">

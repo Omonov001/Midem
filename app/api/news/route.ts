@@ -85,7 +85,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { slug, selectedGame, visibility, request, translations } = body;
+    const { slug, visibility, request, translations } = body;
 
     if (!slug || !translations) {
       return NextResponse.json(
@@ -96,7 +96,6 @@ export async function POST(req: Request) {
 
     const newNews = await News.create({
       slug,
-      ...(selectedGame && { selectedGame }),
       authorId: new mongoose.Types.ObjectId(mongoUser._id),
       visibility: visibility || "public",
       request: request || "requested",

@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     await connectToDatabase();
     const body = await req.json();
 
-    const { slug, author, selectedGame, visibility, translations } = body;
+    const { slug, author, visibility, translations } = body;
 
     if (!slug || !author) {
       return NextResponse.json(
@@ -20,7 +20,6 @@ export async function POST(req: Request) {
     const newNews = await News.create({
       slug,
       author,
-      selectedGame: selectedGame || undefined,
       visibility: visibility || "public",
       translations,
     });
