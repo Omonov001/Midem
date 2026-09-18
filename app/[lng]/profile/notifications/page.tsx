@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import useTranslate from "@/hooks/use-translate";
+import { useLocale } from "next-intl";
 
 // =========================================================
 // TYPES
@@ -103,6 +104,7 @@ function Page() {
 
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [isMarkingAll, setIsMarkingAll] = useState(false);
+  const locale = useLocale();
 
   // =========================================================
   // TRANSLATION
@@ -110,10 +112,8 @@ function Page() {
 
   const getTranslation = (notification: NotificationItem) => {
     return (
-      notification.translations?.uz ||
-      notification.translations?.en ||
-      notification.translations?.ru ||
-      notification.translations?.tr || {
+      notification.translations?.[locale as "uz" | "ru" | "en" | "tr"] ||
+      notification.translations?.uz || {
         title: "Bildirishnoma",
         message: "",
       }
@@ -305,7 +305,7 @@ function Page() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchNotifications();
-  }, []);
+  }, [locale]);
 
   // =========================================================
   // READ / UNREAD
