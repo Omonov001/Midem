@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
@@ -164,7 +165,7 @@ export default function AdminsListPage() {
   const typeOptions = [
     {
       value: "game_suggestion",
-      label: "Oyin Taklifi",
+      label: "O'yin Taklifi",
     },
     {
       value: "bug_report",
@@ -393,7 +394,7 @@ export default function AdminsListPage() {
               </h1>
 
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Savol va takliflar boyicha tegishli adminlar bilan boglaning
+                Savol va takliflar boyicha tegishli adminlar bilan bog'laning
               </p>
             </div>
           </div>
@@ -587,10 +588,15 @@ export default function AdminsListPage() {
                     </div>
 
                     {/* FOOTER */}
-
                     <div className="pt-2.5 border-t border-slate-200/50 dark:border-slate-800/60 flex items-center justify-between gap-2">
-                      <span className="text-[10px] font-mono text-slate-400 truncate">
-                        ID: {admin.id}
+                      <span className="text-[10px] font-bold text-slate-400 truncate">
+                        {admin.username
+                          ? `@${admin.username}`
+                          : admin.isOnline
+                            ? "Hozir onlayn"
+                            : admin.lastSeen
+                              ? `Faol: ${admin.lastSeen}`
+                              : "Oflayn"}
                       </span>
 
                       <button
@@ -599,7 +605,7 @@ export default function AdminsListPage() {
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] sm:text-[11px] font-black rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white transition-all active:scale-95 shadow-sm shrink-0"
                       >
                         <Send className="w-3 h-3" />
-                        Sorov Yuborish
+                        So'rov Yuborish
                       </button>
                     </div>
                   </div>
@@ -617,7 +623,7 @@ export default function AdminsListPage() {
               </h3>
 
               <p className="text-[10px] text-slate-400 mt-1">
-                Qidiruv yoki rol filtrini ozgartirib koring.
+                Qidiruv yoki rol filtrini o'zgartirib ko'ring.
               </p>
             </div>
           )}
@@ -669,7 +675,7 @@ export default function AdminsListPage() {
 
                   <div>
                     <h2 className="text-sm font-black text-slate-900 dark:text-white">
-                      Murojaat yuborish
+                      Murojat yuborish
                     </h2>
 
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -699,7 +705,7 @@ export default function AdminsListPage() {
 
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
-                    Sorov Turi
+                    So'rov Turi
                   </label>
 
                   <select

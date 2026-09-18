@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
@@ -25,23 +26,12 @@ import {
   IoDocumentTextOutline,
   IoCheckmarkCircleOutline,
   IoArrowForwardOutline,
-  IoCardOutline,
-  IoRefreshOutline,
 } from "react-icons/io5";
 
 type PlatformType = "mobile" | "pc" | "both";
 type LanguageType = "uz" | "ru" | "en" | "tr";
 type VisibilityType = "public" | "private";
 type PriceType = "free" | "paid";
-
-interface CardData {
-  _id: string;
-  cardLast4: string;
-  cardholderName: string;
-  country: string;
-  currency: string;
-  verified: boolean;
-}
 
 interface LangSpecificData {
   title: string;
@@ -89,53 +79,6 @@ export default function CreateGamePage() {
   const [uploadStatus, setUploadStatus] = useState("");
 
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-
-  // =========================
-  // PAYOUT CARDS
-  // =========================
-  const [cards, setCards] = useState<CardData[]>([]);
-  const [selectedCardId, setSelectedCardId] = useState("");
-  const [cardsLoading, setCardsLoading] = useState(false);
-
-  const loadCards = async () => {
-    try {
-      setCardsLoading(true);
-
-      const res = await fetch("/api/cards", {
-        method: "GET",
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        throw new Error("Kartalarni yuklab bolmadi");
-      }
-
-      const data = await res.json();
-
-      const loadedCards: CardData[] = data.data || [];
-
-      setCards(loadedCards);
-
-      // Birinchi verified kartani avtomatik tanlash
-      if (!selectedCardId) {
-        const verifiedCard = loadedCards.find((card) => card.verified);
-
-        if (verifiedCard) {
-          setSelectedCardId(verifiedCard._id);
-        }
-      }
-    } catch (error) {
-      console.error("Cards load error:", error);
-    } finally {
-      setCardsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    loadCards();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // =========================
   // TECH DATA
@@ -461,12 +404,6 @@ export default function CreateGamePage() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Paid game uchun card majburiy
-    if (priceType === "paid" && !selectedCardId) {
-      alert("Pullik oyin uchun payout kartani tanlang!");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -579,11 +516,6 @@ export default function CreateGamePage() {
 
         price: priceType === "paid" ? Number(price) : 0,
 
-        // MUHIM:
-        // Endi karta malumotlari yuborilmaydi.
-        // Faqat Card ID yuboriladi.
-        payoutCardId: priceType === "paid" ? selectedCardId : null,
-
         techData,
 
         langData: finalLanguagesData,
@@ -681,11 +613,11 @@ export default function CreateGamePage() {
           <div className="flex flex-col gap-1">
             <h2 className="text-base font-black flex items-center gap-2">
               <IoLinkOutline className="text-blue-500" size={20} />
-              Oyin Slugi (URL nomi)
+              O'yin Slugi (URL nomi)
             </h2>
 
             <p className="text-xs text-slate-400">
-              Oyin uchun unikal URL manzilini kiriting.
+              O'yin uchun unikal URL manzilini kiriting.
             </p>
           </div>
 
@@ -731,7 +663,7 @@ export default function CreateGamePage() {
                 )}
               >
                 {lang === "uz"
-                  ? "Ozbek"
+                  ? "O'zbek"
                   : lang === "ru"
                     ? "Русский"
                     : lang === "en"
@@ -1027,7 +959,7 @@ export default function CreateGamePage() {
                 key={os}
                 className="p-4 rounded-xl bg-black/10 border border-white/5 space-y-3"
               >
-                <h3 className="text-xs font-black capitalize flex items-center gap-2 text-slate-300">
+                <h3 className="text-xs font-black capitalize flex items-center gap-2 dark:text-slate-300 text-black">
                   <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                   {os} Build va Tizim Talablari
                 </h3>
@@ -1132,11 +1064,11 @@ export default function CreateGamePage() {
                   type="button"
                   onClick={() => setPriceType(type)}
                   className={cn(
-                    "py-2.5 rounded-xl border text-xs font-bold capitalize transition-all",
+                    "py-2.5 rounded-xl border border-black/10 dark:border-white/5 text-xs font-bold capitalize transition-all",
 
                     priceType === type
                       ? "border-blue-500 bg-blue-500/10 text-blue-500"
-                      : "border-white/5 bg-white/5 text-slate-400",
+                      : "bg-white/5 text-slate-400",
                   )}
                 >
                   {type === "free" ? "Bepul" : "Pullik"}
@@ -1154,120 +1086,6 @@ export default function CreateGamePage() {
                   placeholder="Narx (Masalan: 9.99$)"
                   className={inputClass}
                 />
-
-                {/* CARD SELECTOR */}
-                <div className="pt-4 border-t border-white/5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-black text-blue-400 flex items-center gap-2">
-                        <IoCardOutline size={17} />
-                        Developer Payout
-                      </p>
-
-                      <p className="text-[10px] text-slate-500 mt-1">
-                        Sotuvlardan tushadigan mablag shu kartaga yuboriladi.
-                      </p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={loadCards}
-                      disabled={cardsLoading}
-                      className="p-2 rounded-lg bg-white/5 hover:bg-white/10"
-                    >
-                      <IoRefreshOutline
-                        size={16}
-                        className={cardsLoading ? "animate-spin" : ""}
-                      />
-                    </button>
-                  </div>
-
-                  {cardsLoading ? (
-                    <div className="p-4 rounded-xl bg-white/5 text-xs text-slate-400 text-center">
-                      Kartalar yuklanmoqda...
-                    </div>
-                  ) : cards.length === 0 ? (
-                    <div className="p-4 rounded-xl border border-dashed border-white/10 text-center">
-                      <IoCardOutline
-                        size={28}
-                        className="mx-auto text-slate-500 mb-2"
-                      />
-
-                      <p className="text-xs font-bold text-slate-300">
-                        Hali payout karta qoshilmagan
-                      </p>
-
-                      <p className="text-[10px] text-slate-500 mt-1">
-                        Avval payout kartangizni qoshing.
-                      </p>
-
-                      <button
-                        type="button"
-                        onClick={() => router.push("/developer/cards")}
-                        className="mt-3 px-4 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold"
-                      >
-                        + Karta qoshish
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {cards
-                        .filter((card) => card.verified)
-                        .map((card) => (
-                          <button
-                            key={card._id}
-                            type="button"
-                            onClick={() => setSelectedCardId(card._id)}
-                            className={cn(
-                              "w-full p-4 rounded-xl border text-left transition-all",
-
-                              selectedCardId === card._id
-                                ? "border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/10"
-                                : "border-white/5 bg-white/5 hover:border-white/10",
-                            )}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
-                                  <IoCardOutline size={21} />
-                                </div>
-
-                                <div>
-                                  <p className="text-xs font-black">
-                                    {card.cardholderName}
-                                  </p>
-
-                                  <p className="text-[11px] text-slate-400 mt-0.5">
-                                    •••• {card.cardLast4} · {card.currency}
-                                  </p>
-                                </div>
-                              </div>
-
-                              {selectedCardId === card._id && (
-                                <IoCheckmarkCircleOutline
-                                  size={22}
-                                  className="text-blue-500"
-                                />
-                              )}
-                            </div>
-                          </button>
-                        ))}
-
-                      <button
-                        type="button"
-                        onClick={() => router.push("/developer/cards")}
-                        className="w-full py-3 rounded-xl border border-dashed border-blue-500/30 text-blue-400 text-xs font-bold hover:bg-blue-500/5 transition-all"
-                      >
-                        + Yangi payout karta qoshish
-                      </button>
-                    </div>
-                  )}
-
-                  <p className="text-[10px] text-slate-500">
-                    MIDEMda toliq karta raqami, CVV, PIN yoki bank paroli
-                    saqlanmaydi.
-                  </p>
-                </div>
               </div>
             )}
           </div>

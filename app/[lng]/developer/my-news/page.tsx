@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
@@ -105,13 +106,13 @@ export default function MyNewsPage() {
         setInfoModal({
           isOpen: true,
           title: "Muvaffaqiyatli!",
-          message: "Yangilik muvaffaqiyatli ochirildi.",
+          message: "Yangilik muvaffaqiyatli o'chirildi.",
         });
       } else {
         alert(result.message);
       }
     } catch (error) {
-      console.error("Ochirishda xatolik:", error);
+      console.error("O'chirishda xatolik:", error);
     }
   };
 
@@ -140,16 +141,16 @@ export default function MyNewsPage() {
   });
 
   return (
-    <div className="w-full my-20 max-w-[1100px] mx-auto space-y-8 p-2 sm:p-4 md:p-0 animate-in fade-in duration-500">
+    <div className="w-full my-20 max-w-[1100px] mx-auto space-y-8 p-2 lg:p-4 xl:p-0 animate-in fade-in duration-500">
       {/* HEADER PART */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
             <Newspaper className="text-blue-600" size={28} /> Yangiliklarim
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Yaratilgan barcha yangiliklarni kuzatish va tillar boyicha
-            boshqarish paneli.
+          <p className="text-xs lg:text-sm text-slate-500 dark:text-slate-400 mt-1">
+            Yasalgan barcha yangiliklarni kuzatish va tillar boyicha boshqarish
+            paneli.
           </p>
         </div>
 
@@ -157,33 +158,36 @@ export default function MyNewsPage() {
           onClick={() => router.push("/developer/create-news")}
           className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all cursor-pointer"
         >
-          <Plus size={16} /> Yangi qoshish
+          <Plus size={16} /> Yangi qo'shish
         </button>
       </div>
 
       {/* FILTRLAR VA QIDIRUV SATHI */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-white dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
-        <div className="flex items-center gap-2 p-1 bg-slate-100 dark:bg-white/5 rounded-xl overflow-x-auto max-w-full">
-          {LANGUAGES.map((lang) => (
-            <button
-              key={lang.code}
-              type="button"
-              onClick={() => setActiveLang(lang.code)}
-              className={cn(
-                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shrink-0 cursor-pointer",
-                activeLang === lang.code
-                  ? "bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 shadow-sm"
-                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
-              )}
-            >
-              <Globe size={12} />
-              {lang.code}
-            </button>
-          ))}
-        </div>
+      <div className="flex flex-col gap-4 justify-between items-start xl:items-center xl:flex-row bg-white dark:bg-slate-900/30 p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm">
+        {/* Til tugmalari + Qidiruv — bittasi shrink-0, ikkinchisi qolgan joyni oladi */}
+        <div className="flex flex-col lg:flex-row xl:flex-1 items-stretch lg:items-center gap-2 w-full min-w-0">
+          {/* Til tanlash tugmalari — o'lchami o'zgarmaydi */}
+          <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-white/5 rounded-xl shrink-0 w-fit">
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang.code}
+                type="button"
+                onClick={() => setActiveLang(lang.code)}
+                className={cn(
+                  "flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all cursor-pointer",
+                  activeLang === lang.code
+                    ? "bg-white dark:bg-slate-950 text-blue-600 dark:text-blue-400 shadow-sm"
+                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200",
+                )}
+              >
+                <Globe size={12} />
+                {lang.code}
+              </button>
+            ))}
+          </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <div className="relative flex-1 md:w-64">
+          {/* Qidiruv inputi — haqiqiy sibling, qolgan bo'sh joyni to'liq egallaydi */}
+          <div className="relative w-full lg:flex-1 min-w-0">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
               size={16}
@@ -196,7 +200,10 @@ export default function MyNewsPage() {
               className="w-full pl-9 pr-4 py-2 rounded-xl border text-xs font-medium outline-none bg-slate-50/50 dark:bg-white/5 border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:border-blue-500"
             />
           </div>
+        </div>
 
+        {/* Status filtri */}
+        <div className="flex items-center gap-2 w-full xl:w-auto shrink-0">
           <select
             value={filterStatus}
             onChange={(e) =>
@@ -209,7 +216,7 @@ export default function MyNewsPage() {
                   | "rejected",
               )
             }
-            className="px-3 py-2 rounded-xl border text-xs font-bold bg-slate-50/50 dark:bg-slate-900 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 cursor-pointer"
+            className="w-full xl:w-auto px-3 py-2 rounded-xl border text-xs font-bold bg-slate-50/50 dark:bg-slate-900 border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 outline-none focus:border-blue-500 cursor-pointer"
           >
             <option value="all">Barchasi</option>
             <option value="requested">Kutilmoqda</option>
@@ -235,7 +242,7 @@ export default function MyNewsPage() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 xl:grid-cols-2">
           {filteredNews.map((item) => {
             const langData = item.translations?.[activeLang];
             const hasTranslation =
@@ -264,7 +271,7 @@ export default function MyNewsPage() {
                     <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-1">
                       <Newspaper size={32} strokeWidth={1} />
                       <span className="text-[10px] font-semibold uppercase tracking-wider">
-                        Rasm yoq
+                        Rasm yo'q
                       </span>
                     </div>
                   )}
@@ -321,7 +328,7 @@ export default function MyNewsPage() {
                     ) : (
                       <div className="py-4 text-center border border-dashed border-amber-500/20 rounded-xl bg-amber-500/5">
                         <p className="text-xs text-amber-500 font-bold">
-                          Bu tilda ({activeLang.toUpperCase()}) malumot
+                          Bu tilda ({activeLang.toUpperCase()}) ma'lumot
                           kiritilmagan.
                         </p>
                       </div>
@@ -369,11 +376,11 @@ export default function MyNewsPage() {
             </div>
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                Yangilikni ochirish
+                Yangilikni o'chirish
               </h3>
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Haqiqatan ham ushbu yangilikni ochirmoqchimisiz? Bu amalni ortga
-                qaytarib bolmaydi.
+                qaytarib bo'lmaydi.
               </p>
             </div>
             <div className="flex gap-2">
@@ -389,7 +396,7 @@ export default function MyNewsPage() {
                 onClick={handleDeleteExecute}
                 className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-red-600 hover:bg-red-500 shadow-md shadow-red-500/20 transition-all cursor-pointer"
               >
-                Ochirish
+                O'chirish
               </button>
             </div>
           </div>

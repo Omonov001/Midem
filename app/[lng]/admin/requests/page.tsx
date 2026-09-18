@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -108,7 +109,7 @@ export default function NewsRequests() {
         setNewsRequests(data.news || []);
       }
     } catch (error) {
-      console.error("Sorovlarni yuklashda xatolik:", error);
+      console.error("So'rovlarni yuklashda xatolik:", error);
     } finally {
       if (refresh) {
         setIsRefreshing(false);
@@ -210,7 +211,9 @@ export default function NewsRequests() {
         slug: game.slug,
 
         title:
-          game.langData?.uz?.title || game.langData?.en?.title || "Nomsiz Oyin",
+          game.langData?.uz?.title ||
+          game.langData?.en?.title ||
+          "Nomsiz O'yin",
 
         subtitle: `@${devUsername}`,
 
@@ -223,7 +226,7 @@ export default function NewsRequests() {
 
         createdAt: game.createdAt || new Date().toISOString(),
 
-        badge: game.langData?.uz?.category || "Oyin",
+        badge: game.langData?.uz?.category || "O'yin",
 
         icon: (
           <Gamepad2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
@@ -387,17 +390,17 @@ export default function NewsRequests() {
 
     const isNews = activeItem.type === "news";
 
-    const subjectName = isNews ? "yangiligingiz" : "oyiningiz";
+    const subjectName = isNews ? "yangiligingiz" : "o'yiningiz";
 
     return {
       uz: {
         title: isApprove
-          ? `${isNews ? "Yangilik" : "Oyin"} tasdiqlandi`
-          : `${isNews ? "Yangilik" : "Oyin"} rad etildi`,
+          ? `${isNews ? "Yangilik" : "O'yin"} tasdiqlandi`
+          : `${isNews ? "Yangilik" : "O'yin"} rad etildi`,
 
         message: isApprove
-          ? `Siz yuborgan "${activeItem.title}" ${subjectName} sorovi tasdiqlandi va platformada elon qilindi.`
-          : `Afsuski, siz yuborgan "${activeItem.title}" ${subjectName} sorovi moderatsiyadan otmadi va rad etildi.`,
+          ? `Siz yuborgan "${activeItem.title}" ${subjectName} so'rovi tasdiqlandi va platformada elon qilindi.`
+          : `Afsuski, siz yuborgan "${activeItem.title}" ${subjectName} so'rovi moderatsiyadan otmadi va rad etildi.`,
       },
 
       ru: {
@@ -447,12 +450,12 @@ export default function NewsRequests() {
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-indigo-500 animate-pulse" />
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">
-              Kelib Tushgan Sorovlar
+              Kelib Tushgan So'rovlar
             </h2>
           </div>
 
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-xl">
-            Adminlar tasdiqlashi uchun yuborilgan yangiliklar va oyinlar
+            Adminlar tasdiqlashi uchun yuborilgan yangiliklar va o'yinlar
             royxati.
           </p>
         </div>
@@ -501,7 +504,7 @@ export default function NewsRequests() {
             dark:hover:bg-indigo-500/10
             dark:hover:text-indigo-400
           "
-          title="Sorovlarni yangilash"
+          title="So'rovlarni yangilash"
         >
           <RefreshCw
             className={`
@@ -566,7 +569,7 @@ export default function NewsRequests() {
           }`}
         >
           <Gamepad2 className="w-3.5 h-3.5" />
-          <span>Oyinlar</span>
+          <span>O'yinlar</span>
 
           {gameRequests.length > 0 && (
             <span className="ml-1 px-1.5 py-0.5 rounded-md text-[9px] bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-300">
@@ -584,7 +587,7 @@ export default function NewsRequests() {
         <div className="py-20 flex flex-col items-center justify-center text-slate-400">
           <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mb-2" />
 
-          <p className="text-xs font-bold">Sorovlar yuklanmoqda...</p>
+          <p className="text-xs font-bold">So'rovlar yuklanmoqda...</p>
         </div>
       ) : (
         <motion.div
@@ -775,11 +778,11 @@ export default function NewsRequests() {
                 </div>
 
                 <p className="text-sm text-slate-500 dark:text-slate-400 font-bold">
-                  Bu bolimda hech qanday sorovlar qolmadi.
+                  Bu bo'limda hech qanday so'rovlar qolmadi.
                 </p>
 
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                  Yangi sorovlar kelganda ular shu yerda korinadi.
+                  Yangi so'rovlar kelganda ular shu yerda ko'rinadi.
                 </p>
               </div>
             )}
@@ -867,8 +870,8 @@ export default function NewsRequests() {
 
                   <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[280px]">
                     {confirmModal.item.actionType === "approve"
-                      ? `"${confirmModal.item.title}" sorovini tasdiqlashni va bildirishnoma modalini ochishni xohlaysizmi?`
-                      : `"${confirmModal.item.title}" sorovini rad etishni xohlaysizmi?`}
+                      ? `"${confirmModal.item.title}" so'rovini tasdiqlashni va bildirishnoma modalini ochishni xohlaysizmi?`
+                      : `"${confirmModal.item.title}" so'rovini rad etishni xohlaysizmi?`}
                   </p>
                 </div>
 

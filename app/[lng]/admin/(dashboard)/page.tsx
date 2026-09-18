@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable react-hooks/set-state-in-effect */
 "use client";
 
@@ -224,14 +225,14 @@ function getGameName(game: GameData) {
     game.langData?.en?.title ||
     game.langData?.ru?.title ||
     game.langData?.tr?.title ||
-    "Nomsiz oyin"
+    "Nomsiz o'yin"
   );
 }
 
 function getRequestTypeLabel(type?: MessageData["requestType"]) {
   switch (type) {
     case "game_suggestion":
-      return "Oyin";
+      return "O'yin";
 
     case "bug_report":
       return "Bug";
@@ -351,7 +352,7 @@ function Page() {
     {
       id: 1,
 
-      name: "Oyin sorovlari",
+      name: "O'yin sorovlari",
 
       value: stats?.pendingGames ?? 0,
 
@@ -399,7 +400,7 @@ function Page() {
     {
       id: 4,
 
-      name: "Faol oyinlar",
+      name: "Faol o'yinlar",
 
       value: stats?.games ?? 0,
 
@@ -614,7 +615,7 @@ function Page() {
               <div className="flex justify-between items-start mb-5">
                 <div>
                   <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-slate-100">
-                    Kutilayotgan Oyinlar
+                    Kutilayotgan O'yinlar
                   </h2>
 
                   <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -671,7 +672,7 @@ function Page() {
                   <Clock className="w-8 h-8 text-slate-400 mx-auto mb-3" />
 
                   <p className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-200">
-                    Hozircha yangi oyin sorovi yoq
+                    Hozircha yangi o'yin so'rovi yo'q
                   </p>
 
                   <p className="text-xs sm:text-sm text-slate-400 mt-1.5">
@@ -682,7 +683,7 @@ function Page() {
             </div>
 
             <button className="w-full mt-4 py-3.5 px-5 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold text-sm hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2 group shadow-md">
-              Sorovlarni boshqarish
+              So'rovlarni boshqarish
               <ArrowUpRight className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </button>
           </motion.div>
@@ -708,11 +709,11 @@ function Page() {
             <div className="flex justify-between items-start mb-5">
               <div>
                 <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-slate-100">
-                  Oxirgi Foydalanuvchi Sorovlari
+                  Oxirgi Foydalanuvchi So'rovlari
                 </h2>
 
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  Foydalanuvchilardan kelgan sorov va xabarlar
+                  Foydalanuvchilardan kelgan so'rov va xabarlar
                 </p>
               </div>
 
@@ -728,7 +729,7 @@ function Page() {
                 <RefreshCw className="w-7 h-7 text-emerald-500 mx-auto mb-3 animate-spin" />
 
                 <p className="text-sm font-bold text-slate-600 dark:text-slate-300">
-                  Sorovlar yuklanmoqda...
+                  So'rovlar yuklanmoqda...
                 </p>
               </div>
             ) : dashboard?.recentRequests?.length ? (
@@ -787,11 +788,11 @@ function Page() {
                 <MessageSquare className="w-8 h-8 text-slate-400 mx-auto mb-3" />
 
                 <p className="text-base font-bold text-slate-800 dark:text-slate-200">
-                  Hozircha sorovlar yoq
+                  Hozircha so'rovlar yo'q
                 </p>
 
                 <p className="text-xs text-slate-400 mt-1">
-                  Yangi foydalanuvchi sorovlari shu yerda chiqadi
+                  Yangi foydalanuvchi so'rovlari shu yerda chiqadi
                 </p>
               </div>
             )}

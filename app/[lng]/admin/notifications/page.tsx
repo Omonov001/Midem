@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -19,6 +20,7 @@ import {
   ShieldCheck,
   RefreshCw,
 } from "lucide-react";
+import { useParams } from "next/navigation";
 
 // =========================================================
 // TYPES
@@ -123,6 +125,9 @@ export default function NotificationsPage() {
   const [users, setUsers] = useState<UserItem[]>([]);
   const [isUsersLoading, setIsUsersLoading] = useState(false);
 
+  const params = useParams();
+  const currentLang = (params?.lng as string) || "uz";
+
   // =======================================================
   // FILTERS
   // =======================================================
@@ -225,11 +230,11 @@ export default function NotificationsPage() {
     },
     {
       value: "unread",
-      label: "Oqilmagan",
+      label: "O'qilmagan",
     },
     {
       value: "read",
-      label: "Oqilgan",
+      label: "O'qilgan",
     },
   ];
 
@@ -435,6 +440,8 @@ export default function NotificationsPage() {
 
   const getTitle = (notification: NotificationItem) => {
     return (
+      notification.translations?.[currentLang as keyof NotificationTranslations]
+        ?.title ||
       notification.translations?.uz?.title ||
       notification.translations?.en?.title ||
       notification.translations?.ru?.title ||
@@ -445,6 +452,8 @@ export default function NotificationsPage() {
 
   const getMessage = (notification: NotificationItem) => {
     return (
+      notification.translations?.[currentLang as keyof NotificationTranslations]
+        ?.message ||
       notification.translations?.uz?.message ||
       notification.translations?.en?.message ||
       notification.translations?.ru?.message ||
@@ -502,7 +511,11 @@ export default function NotificationsPage() {
   };
 
   const getSenderName = (notification: NotificationItem) => {
-    return notification.senderName || "System";
+    if (notification.senderName) return notification.senderName;
+    const sender = getUserByClerkId(notification.senderId);
+    if (sender?.name) return sender.name;
+    if (sender?.email) return sender.email;
+    return "System";
   };
 
   const getReadStatus = (notification: NotificationItem) => {
@@ -686,7 +699,7 @@ export default function NotificationsPage() {
 
       if (!response.ok) {
         throw new Error(
-          data.message || "Notificationni ochirishda xatolik yuz berdi",
+          data.message || "Notificationni o'chirishda xatolik yuz berdi",
         );
       }
 
@@ -706,7 +719,7 @@ export default function NotificationsPage() {
         isOpen: false,
       });
 
-      showToast("Notification muvaffaqiyatli ochirildi.");
+      showToast("Notification muvaffaqiyatli o'chirildi.");
     } catch (error) {
       console.error("DELETE /api/notifications/[id] xatosi:", error);
 
@@ -717,7 +730,7 @@ export default function NotificationsPage() {
       showToast(
         error instanceof Error
           ? error.message
-          : "Notificationni ochirishda xatolik yuz berdi",
+          : "Notificationni o'chirishda xatolik yuz berdi",
       );
     } finally {
       setIsDeleting(false);
@@ -840,7 +853,7 @@ export default function NotificationsPage() {
             <Bell className="w-8 h-8 text-indigo-500 shrink-0" />
 
             <div className="min-w-0">
-              <h1 className="text-lg font-black tracking-tight text-slate-950 dark:text-white uppercase truncate">
+              <h1 className="text-lg font-black tracking-tight text-slate-950 dark:text-white uppercase">
                 Notifications Control
               </h1>
 
@@ -966,7 +979,7 @@ export default function NotificationsPage() {
           <div className="rounded-xl bg-slate-100/70 dark:bg-slate-900/50 border border-slate-200/50 dark:border-slate-800/50 p-3">
             <div className="flex items-center justify-between">
               <span className="text-[9px] font-black uppercase tracking-wide text-slate-400">
-                Oqilmagan
+                O'qilmagan
               </span>
 
               <Eye className="w-3.5 h-3.5 text-amber-500" />
@@ -988,7 +1001,7 @@ export default function NotificationsPage() {
 
             <input
               type="text"
-              placeholder="Title, message, ism yoki ID boyicha qidirish..."
+              placeholder="Title, message, ism yoki ID bo'yicha qidirish..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-1.5 text-xs font-medium rounded-xl bg-slate-100 dark:bg-slate-900/50 border border-transparent focus:border-indigo-500/30 outline-none text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500"
@@ -1198,7 +1211,7 @@ export default function NotificationsPage() {
                       type="button"
                       onClick={(e) => triggerDelete(notification, e)}
                       className="p-1.5 rounded-lg text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 transition-colors"
-                      title="Notificationni ochirish"
+                      title="Notificationni o'chirish"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -1369,7 +1382,7 @@ export default function NotificationsPage() {
 
                         {selectedNotification.senderId && (
                           <p className="text-[9px] text-slate-400 font-mono truncate mt-0.5">
-                            ID: {selectedNotification.senderId}
+                            Name: {selectedNotification.senderId}
                           </p>
                         )}
                       </div>
@@ -1383,7 +1396,7 @@ export default function NotificationsPage() {
                   <Clock className="w-3 h-3" />
 
                   <span>
-                    Yaratilgan:{" "}
+                    Joylangan:{" "}
                     {new Date(selectedNotification.createdAt).toLocaleString(
                       "uz-UZ",
                     )}
@@ -1402,7 +1415,7 @@ export default function NotificationsPage() {
                   <div className="rounded-xl bg-slate-50 dark:bg-slate-950 p-3 border border-slate-200 dark:border-slate-800">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-[9px] font-black uppercase text-indigo-500">
-                        Ozbekcha · UZ
+                        O'zbekcha · UZ
                       </span>
                     </div>
 
@@ -1514,7 +1527,7 @@ export default function NotificationsPage() {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  Ochirish
+                  O'chirish
                 </button>
 
                 <button
@@ -1572,7 +1585,7 @@ export default function NotificationsPage() {
 
                 <div>
                   <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                    Notification ochirish
+                    Notification o'chirish
                   </h3>
 
                   <p className="text-[10px] text-slate-400 mt-0.5">
@@ -1582,7 +1595,7 @@ export default function NotificationsPage() {
               </div>
 
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-4">
-                Quyidagi notificationni ochirishni tasdiqlaysizmi?
+                Quyidagi notificationni o'chirishni tasdiqlaysizmi?
               </p>
 
               <div className="mt-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3">
@@ -1614,12 +1627,12 @@ export default function NotificationsPage() {
                   {isDeleting ? (
                     <>
                       <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Ochirilmoqda...
+                      O'chirilmoqda...
                     </>
                   ) : (
                     <>
                       <Trash2 className="w-3.5 h-3.5" />
-                      Ochirish
+                      O'chirish
                     </>
                   )}
                 </button>

@@ -31,14 +31,6 @@ import {
   IoCloseOutline,
 } from "react-icons/io5";
 
-interface StatCardProps {
-  icon: React.ReactNode;
-  val: string | number;
-  label: string;
-  isDark: boolean;
-  color: string;
-}
-
 export default function EditGameForm({ gameSlug }: { gameSlug: string }) {
   const router = useRouter();
 

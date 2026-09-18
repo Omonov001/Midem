@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@clerk/nextjs/server";
-import mongoose from "mongoose";
 
 import Game from "@/models/game.model";
-import Card from "@/models/card.model";
 import User from "@/models/user.model";
 import { connectToDatabase } from "@/lib/mongoose";
 
@@ -34,7 +32,7 @@ export async function POST(req: Request) {
     // 3. Body
     const body = await req.json();
 
-    const { slug, payoutCardId, priceType, price, ...gameData } = body;
+    const { slug, priceType, price, ...gameData } = body;
 
     // 4. Slug
     if (!slug) {
@@ -54,42 +52,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 6. Agar o'yin pullik bo'lsa, payout card majburiy
-    if (priceType === "paid") {
-      if (!payoutCardId) {
-        return NextResponse.json(
-          {
-            message: "Pullik o'yin uchun payout kartani tanlashingiz kerak!",
-          },
-          { status: 400 },
-        );
-      }
-
-      if (!mongoose.Types.ObjectId.isValid(payoutCardId)) {
-        return NextResponse.json(
-          { message: "Noto'g'ri payoutCardId!" },
-          { status: 400 },
-        );
-      }
-
-      // 7. Karta aynan shu developerga tegishlimi?
-      const card = await Card.findOne({
-        _id: payoutCardId,
-        userId: user.id,
-        verified: true,
-      });
-
-      if (!card) {
-        return NextResponse.json(
-          {
-            message: "Payout karta topilmadi yoki tasdiqlanmagan!",
-          },
-          { status: 403 },
-        );
-      }
-    }
-
-    // 8. Faqat kerakli ma'lumotlarni saqlaymiz
+    // 6. Faqat kerakli ma'lumotlarni saqlaymiz
     const newGame = await Game.create({
       ...gameData,
 
@@ -99,9 +62,6 @@ export async function POST(req: Request) {
 
       // Developerning haqiqiy MongoDB ID'si
       developerId: mongoUser._id,
-
-      // Faqat tekshirilgan karta ID'si
-      payoutCardId: priceType === "paid" ? payoutCardId : null,
 
       request: "requested",
     });

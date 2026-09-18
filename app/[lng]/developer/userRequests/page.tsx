@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
@@ -144,7 +145,7 @@ export default function UserRequestsPage() {
     }
   > = {
     game_suggestion: {
-      label: "Oyin Taklifi",
+      label: "O'yin Taklifi",
       color: "bg-indigo-500/10 text-indigo-500",
     },
 
@@ -175,7 +176,7 @@ export default function UserRequestsPage() {
     },
     {
       value: "game_suggestion",
-      label: "Oyin Taklifi",
+      label: "O'yin Taklifi",
     },
     {
       value: "bug_report",
@@ -567,7 +568,7 @@ export default function UserRequestsPage() {
             <MessageSquare className="w-4 h-4 text-indigo-500" />
 
             <h1 className="text-lg font-black tracking-tight text-slate-950 dark:text-white uppercase">
-              Foydalanuvchilar Sorovlari
+              Foydalanuvchilar So'rovlari
             </h1>
           </div>
 
@@ -813,7 +814,7 @@ export default function UserRequestsPage() {
             <MessageSquare className="w-8 h-8 text-slate-300 dark:text-slate-700 mb-2" />
 
             <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">
-              Hech qanday sorov topilmadi
+              Hech qanday so'rov topilmadi
             </h3>
 
             <p className="text-xs text-slate-400 mt-1">
@@ -983,7 +984,7 @@ export default function UserRequestsPage() {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg text-rose-500 hover:bg-rose-500/10 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  Ochirish
+                  O'chirish
                 </button>
 
                 <button
@@ -1045,7 +1046,7 @@ export default function UserRequestsPage() {
 
                 <div>
                   <h3 className="text-sm font-black text-slate-900 dark:text-white">
-                    Message ochirish
+                    Message o'chirish
                   </h3>
 
                   <p className="text-[10px] text-slate-400 mt-0.5">
@@ -1058,7 +1059,7 @@ export default function UserRequestsPage() {
                 <span className="font-bold text-slate-700 dark:text-slate-200">
                   {deleteConfirm.name}
                 </span>{" "}
-                yuborgan messageni ochirishni tasdiqlaysizmi?
+                yuborgan messageni o'chirishni tasdiqlaysizmi?
               </p>
 
               <div className="flex justify-end gap-2 mt-5">
@@ -1084,12 +1085,12 @@ export default function UserRequestsPage() {
                   {isDeleting ? (
                     <>
                       <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Ochirilmoqda...
+                      O'chirilmoqda...
                     </>
                   ) : (
                     <>
                       <Trash2 className="w-3.5 h-3.5" />
-                      Ochirish
+                      O'chirish
                     </>
                   )}
                 </button>

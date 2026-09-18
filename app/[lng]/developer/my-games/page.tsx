@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -183,7 +184,7 @@ export default function MyGamesPage() {
               </div>
               <div>
                 <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                  Oyinni Ochirish
+                  O'yinni O'chirish
                 </h3>
                 <p className="text-xs text-red-500 font-bold mt-0.5">
                   Bu amalni ortga qaytarib bolmaydi!
@@ -194,11 +195,11 @@ export default function MyGamesPage() {
             {/* Ogohlantirish va korsatmalari */}
             <div className="text-xs text-slate-600 dark:text-slate-300 space-y-2 bg-slate-100 dark:bg-slate-950/60 p-4 rounded-2xl border border-slate-200 dark:border-white/5">
               <p>
-                Oyin bazadan, unga tegishli <b>R2 xotirasidagi fayllar</b>,
+                O'yin bazadan, unga tegishli <b>R2 xotirasidagi fayllar</b>,
                 rasmlar va barcha malumotlar bilan <b>butunlay ochiriladi</b>.
               </p>
               <p className="pt-2">
-                Tasdiqlash uchun ushbu oyin nomini pastga kiriting:
+                Tasdiqlash uchun ushbu o'yin nomini pastga kiriting:
               </p>
               <div className="p-2.5 bg-red-500/10 border border-red-500/30 rounded-xl text-center select-all font-mono font-bold text-red-500 dark:text-red-400 text-sm">
                 {selectedDeleteGame.langData?.[activeLang]?.title ||
@@ -248,11 +249,11 @@ export default function MyGamesPage() {
                 {isDeleting ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />{" "}
-                    Ochirilmoqda...
+                    O'chirilmoqda...
                   </>
                 ) : (
                   <>
-                    <Trash2 size={16} /> Ochirish
+                    <Trash2 size={16} /> O'chirish
                   </>
                 )}
               </button>
@@ -266,10 +267,10 @@ export default function MyGamesPage() {
         <div>
           <h1 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white flex items-center gap-3">
             <Gamepad2 className="text-blue-600 dark:text-blue-400" size={32} />
-            Mening Oyinlarim
+            Mening O'yinlarim
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Siz tomondan yaratilgan va yuklangan oyin loyihalarining boshqaruv
+            Siz tomondan yaratilgan va yuklangan o'yin loyihalarining boshqaruv
             paneli.
           </p>
         </div>
@@ -277,7 +278,7 @@ export default function MyGamesPage() {
           href="/developer/create-games"
           className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm text-white bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/20 active:scale-[0.98] transition-all"
         >
-          <Plus size={18} /> Yangi oyin loyihasi
+          <Plus size={18} /> Yangi o'yin loyihasi
         </Link>
       </div>
 
@@ -345,7 +346,7 @@ export default function MyGamesPage() {
         <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900/10 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
           <Loader2 size={32} className="animate-spin text-blue-600 mb-2" />
           <p className="text-slate-400 text-sm font-medium">
-            Oyinlaringiz yuklanmoqda...
+            O'yinlaringiz yuklanmoqda...
           </p>
         </div>
       ) : error ? (
@@ -355,7 +356,7 @@ export default function MyGamesPage() {
       ) : filteredGames.length === 0 ? (
         <div className="text-center py-20 bg-white dark:bg-slate-900/10 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
           <p className="text-slate-400 dark:text-slate-500 font-medium text-sm">
-            Mos keladigan oyin loyihasi topilmadi.
+            Mos keladigan o'yin loyihasi topilmadi.
           </p>
         </div>
       ) : (

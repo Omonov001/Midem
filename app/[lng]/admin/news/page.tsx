@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
@@ -26,7 +27,7 @@ const LANGUAGES = [
   { code: "uz", label: "Ozbekcha" },
   { code: "ru", label: "Русский" },
   { code: "en", label: "English" },
-  { code: "tu", label: "Türkçe" },
+  { code: "tr", label: "Türkçe" },
 ];
 
 export default function MyNewsPage() {
@@ -118,7 +119,7 @@ export default function MyNewsPage() {
         alert(result.message);
       }
     } catch (error) {
-      console.error("Ochirishda xatolik:", error);
+      console.error("O'chirishda xatolik:", error);
     }
   };
 
@@ -159,7 +160,7 @@ export default function MyNewsPage() {
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
-            Midem Joylangan barcha yangiliklarni kuzatish va tillar boyicha
+            Midem Joylangan barcha yangiliklarni kuzatish va tillar bo'yicha
             boshqarish paneli.
           </p>
         </div>
@@ -437,7 +438,7 @@ export default function MyNewsPage() {
                       <Newspaper size={32} strokeWidth={1} />
 
                       <span className="text-[10px] font-semibold uppercase tracking-wider">
-                        Rasm yoq
+                        Rasm yo'q
                       </span>
                     </div>
                   )}
@@ -521,7 +522,7 @@ export default function MyNewsPage() {
                       type="button"
                       onClick={() => confirmDelete(item._id)}
                       className="p-2 rounded-xl text-slate-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/15 transition-all cursor-pointer"
-                      title="Ochirish"
+                      title="O'chirish"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -543,12 +544,12 @@ export default function MyNewsPage() {
 
             <div className="space-y-1">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                Yangilikni ochirish
+                Yangilikni o'chirish
               </h3>
 
               <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                Haqiqatan ham ushbu yangilikni ochirmoqchimisiz? Bu amalni ortga
-                qaytarib bolmaydi.
+                Haqiqatan ham ushbu yangilikni o'chirmoqchimisiz? Bu amalni
+                ortga qaytarib bo'lmaydi.
               </p>
             </div>
 
@@ -571,7 +572,7 @@ export default function MyNewsPage() {
                 onClick={handleDeleteExecute}
                 className="flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider text-white bg-red-600 hover:bg-red-500 shadow-md shadow-red-500/20 transition-all cursor-pointer"
               >
-                Ochirish
+                O'chirish
               </button>
             </div>
           </div>

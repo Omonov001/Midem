@@ -42,6 +42,15 @@ const isBannedRoute = createRouteMatcher(["/:locale/banned"]);
 // API va Webhook
 const isApiOrWebhookRoute = createRouteMatcher(["/api(.*)", "/trpc(.*)"]);
 
+// =========================================================
+// FAQAT LOGIN TALAB QILINADIGAN, ROLE TEKSHIRILMAYDIGAN SAHIFALAR
+// "admin-list" nomi "admin(.*)" patterniga tasodifan mos kelib qolgani
+// uchun bu yerda alohida ajratildi — bu yerga har qanday login
+// qilgan user kira oladi, role muhim emas
+// =========================================================
+
+const isOpenToAllLoggedInRoute = createRouteMatcher(["/:locale/admins-list"]);
+
 export default clerkMiddleware(async (auth, request: NextRequest) => {
   // =========================================================
   // BANNED USER CHECK
@@ -112,40 +121,46 @@ export default clerkMiddleware(async (auth, request: NextRequest) => {
     isAdminRoute(request) ||
     isOwnerRoute(request)
   ) {
-    const { userId } = await auth();
+    // Bu sahifalarga faqat login yetarli — role tekshirilmaydi
+    // (auth.protect() yuqorida allaqachon login borligini tekshirib bo'ldi)
+    if (isOpenToAllLoggedInRoute(request)) {
+      // hech narsa qilmaymiz, pastga o'tib ketamiz
+    } else {
+      const { userId } = await auth();
 
-    // Login qilmagan
-    if (!userId) {
-      return Response.redirect(new URL("/uz", request.url));
-    }
-
-    try {
-      await connectToDatabase();
-
-      const user = await User.findOne({ clerkId: userId })
-        .select("role")
-        .lean();
-
-      const role = user?.role;
-
-      // Developer → faqat developer
-      if (isDeveloperRoute(request) && role !== "developer") {
+      // Login qilmagan
+      if (!userId) {
         return Response.redirect(new URL("/uz", request.url));
       }
 
-      // Admin → faqat admin
-      if (isAdminRoute(request) && role !== "admin") {
+      try {
+        await connectToDatabase();
+
+        const user = await User.findOne({ clerkId: userId })
+          .select("role")
+          .lean();
+
+        const role = user?.role;
+
+        // Developer → faqat developer
+        if (isDeveloperRoute(request) && role !== "developer") {
+          return Response.redirect(new URL("/uz", request.url));
+        }
+
+        // Admin → faqat admin
+        if (isAdminRoute(request) && role !== "admin") {
+          return Response.redirect(new URL("/uz", request.url));
+        }
+
+        // Owner → faqat owner
+        if (isOwnerRoute(request) && role !== "owner") {
+          return Response.redirect(new URL("/uz", request.url));
+        }
+      } catch (error) {
+        console.error("ROLE CHECK ERROR:", error);
+
         return Response.redirect(new URL("/uz", request.url));
       }
-
-      // Owner → faqat owner
-      if (isOwnerRoute(request) && role !== "owner") {
-        return Response.redirect(new URL("/uz", request.url));
-      }
-    } catch (error) {
-      console.error("ROLE CHECK ERROR:", error);
-
-      return Response.redirect(new URL("/uz", request.url));
     }
   }
 

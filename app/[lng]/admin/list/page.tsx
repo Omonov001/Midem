@@ -1014,14 +1014,6 @@ export default function UsersList({
                 </button>
 
                 <button
-                  onClick={() => setIsUserModalOpen(true)}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-950 dark:bg-white text-white dark:text-slate-950 font-bold text-sm hover:opacity-90 active:scale-[0.98] transition"
-                >
-                  <UserCog className="w-4 h-4" />
-                  Yangi qoshish
-                </button>
-
-                <button
                   onClick={handleOpenPublicNotif}
                   className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-sm hover:shadow-md transition"
                 >
@@ -1153,7 +1145,7 @@ export default function UsersList({
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Ism, username yoki email boyicha qidirish..."
+                  placeholder="Ism, username yoki email bo'yicha qidirish..."
                   className="w-full h-12 pl-11 pr-4 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-sm font-semibold text-slate-900 dark:text-white placeholder:text-slate-400 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition"
                 />
 

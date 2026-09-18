@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -438,7 +439,7 @@ export default function DeveloperDashboard() {
 
   const stats = [
     {
-      label: "Jami Oyinlar",
+      label: "Jami O'yinlar",
 
       value: loadingDeveloper ? "..." : `${gamesCount ?? 0} ta`,
 
@@ -486,7 +487,7 @@ export default function DeveloperDashboard() {
     },
 
     {
-      label: "Ortacha Reyting",
+      label: "O'rtacha Reyting",
 
       value: "Soon",
 
@@ -709,10 +710,10 @@ export default function DeveloperDashboard() {
           <div className="bg-white dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-white/5 p-5 sm:p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-lg font-black">Sizning oyinlaringiz</h2>
+                <h2 className="text-lg font-black">Sizning o'yinlaringiz</h2>
 
                 <p className="text-xs text-slate-400 mt-1">
-                  Oxirgi yaratilgan oyinlar
+                  Oxirgi Joylangan o'yinlar
                 </p>
               </div>
 
@@ -988,7 +989,7 @@ export default function DeveloperDashboard() {
               </div>
 
               <div>
-                <p className="text-xs text-slate-400">Ortacha reyting</p>
+                <p className="text-xs text-slate-400">O'rtacha reyting</p>
 
                 <p className="text-2xl font-black">4.8</p>
               </div>
@@ -1028,7 +1029,7 @@ export default function DeveloperDashboard() {
                 <h2 className="text-lg font-black">Payout</h2>
 
                 <p className="text-xs text-slate-400 mt-1">
-                  Mablagni kartangizga yechib oling.
+                  Mablag'ni kartangizga yechib oling.
                 </p>
               </div>
 
@@ -1189,7 +1190,8 @@ export default function DeveloperDashboard() {
               </button>
 
               <p className="text-[10px] leading-relaxed text-center text-slate-400">
-                Payout sorovi yuborilgandan song mablag tekshiruvdan otkaziladi.
+                Payout sorovi yuborilgandan so'ng mablag' tekshiruvdan
+                o'tkaziladi.
               </p>
             </div>
           </div>
