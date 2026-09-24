@@ -265,7 +265,13 @@ export default function DeveloperDashboard() {
       return;
     }
 
-    loadDeveloperData();
+    const timer = window.setTimeout(() => {
+      loadDeveloperData();
+    }, 1500);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, authLoaded, isSignedIn, clerkUser]);
@@ -607,6 +613,26 @@ export default function DeveloperDashboard() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* ==================================================
+            PAYOUT WARNING
+        ================================================== */}
+
+        <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300">
+          <div className="flex items-start gap-3">
+            <AlertCircle size={20} className="shrink-0 mt-0.5" />
+            <p className="text-xs sm:text-sm font-semibold leading-relaxed">
+              Mablag'larni xalqaro bank hisob raqamlariga (SWIFT/Visa Direct)
+              chiqarishda, global bank tranzitsiyalari va vositachi tranzit
+              banklarning o'zgarmas qattiq to'lovlari sababli, ayniqsa kichik
+              summalar (masalan, $20 yig'ilganda) yechilganda jami ushlanmalar
+              miqdori 34% dan 35% gacha yetadi va o'zingizga taxminan $11-$12
+              dollar yetib boradi. Pul yo'qotmaslik uchun balansda kamida $100,
+              $200 yoki $500 yig'ilganda yechishni qat'iy tavsiya etamiz!
+              Keyinchalik e'tirozlar qabul qilinmaydi.
+            </p>
+          </div>
         </div>
 
         {/* ==================================================

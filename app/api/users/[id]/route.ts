@@ -9,7 +9,12 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const { userId } = await auth();
+    let { userId } = await auth();
+
+    if (!userId) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      userId = (await auth()).userId;
+    }
 
     if (!userId) {
       return NextResponse.json(

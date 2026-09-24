@@ -51,7 +51,7 @@ function UserBox() {
   const { lng } = useParams();
 
   // Clerk hook'lari
-  const { isSignedIn } = useAuth();
+  const { isSignedIn, isLoaded } = useAuth();
   const { signOut } = useClerk();
   const { user } = useUser();
 
@@ -62,7 +62,7 @@ function UserBox() {
 
   // ✅ USER ROLE'NI MONGODB'DAN OLISH
   useEffect(() => {
-    if (!user?.id || !isSignedIn) {
+    if (!isLoaded || !user?.id || !isSignedIn) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setRole("user");
       return;
@@ -96,7 +96,7 @@ function UserBox() {
     };
 
     getRole();
-  }, [user?.id, isSignedIn]);
+  }, [isLoaded, user?.id, isSignedIn]);
 
   if (!mounted) return <div className="size-10" />;
 
