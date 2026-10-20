@@ -6,8 +6,7 @@ import { useTheme } from "@/components/ui/theme-provider";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import Logo from "./logo";
-import { BsInstagram, BsTelegram, BsYoutube } from "react-icons/bs";
-import { SiRoblox } from "react-icons/si";
+import { BsInstagram, BsYoutube } from "react-icons/bs";
 import useTranslate from "@/hooks/use-translate";
 
 function Footer() {
@@ -30,16 +29,6 @@ function Footer() {
       icon: BsYoutube,
       href: "https://www.youtube.com/@Midem_Studio",
       color: "hover:bg-red-600",
-    },
-    {
-      icon: BsTelegram,
-      href: "https://t.me/MidemRobuxServis",
-      color: "hover:bg-blue-400",
-    },
-    {
-      icon: SiRoblox,
-      href: "roblox.com/games/105729771895633/Uzbekhaven-chat",
-      color: "hover:bg-blue-700",
     },
     {
       icon: BsInstagram,
