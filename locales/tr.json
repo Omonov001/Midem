@@ -194,5 +194,29 @@
   "ComingSoon": "Çok Yakında",
   "common": {
     "loading": "Yükleniyor..."
+  },
+  "PrivacyPolicy": {
+    "title": "Gizlilik",
+    "subtitle": "Sözleşmesi",
+    "lastUpdated": "Son güncelleme: 20 Ekim 2026. Bu gizlilik politikası, platformdaki bilgilerinizi nasıl güvenli bir şekilde işlediğimizi, topladığımızı ve koruduğumuzu ayrıntılı olarak açıklamaktadır.",
+    "section1Title": "1. Topladığımız Veriler",
+    "section1Desc": "Veri toplamayı minimum düzeyde sınırlandırıyoruz. Launcher ekosisteminde güvenli erişim ve operasyonel kararlılık sağlamak amacıyla yalnızca Kullanıcı Adı, Ad Soyad, E-posta Adresi ve IP Adresinizi topluyoruz.",
+    "section2Title": "2. Ödeme ve Fatura Güvenliği",
+    "section2Desc": "Güvenlik temel önceliğimizdir. Mali satın alımlar yalnızca lisanslı ödeme ortağımız Xsolla aracılığıyla gerçekleştirilir. Kredi kartı bilgileri veya diğer mali parametreler asla sunucularımızda kaydedilmez veya tutulmaz.",
+    "section3Title": "3. Korumalı Hesap Silme",
+    "section3Desc": "Kayıtlı verilerinizi silme hakkına tamamen sahipsiniz. Hesapları yanlışlıkla kapatılmaya veya tek tıkla yapılan hatalara karşı korumak için, kimlik bilgilerini bulut altyapımızdan kalıcı olarak silmeden önce manuel metin girişi doğrulaması içeren çok aşamalı bir silme arayüzü talep ediyoruz."
+  },
+  "TermsOfUse": {
+    "title": "Kullanım",
+    "subtitle": "Şartları",
+    "lastUpdated": "Son güncelleme: 20 Ekim 2026. Servisimize giriş yaparak, standart yasal sözleşmelerimize uymayı açıkça kabul etmiş olursunuz.",
+    "section1Title": "1. Yaş Sınırları ve Şifre Kuralları",
+    "section1Desc": "Kullanıcıların kaydolmak ve bir platform profili oluşturmak için en az 9 yaşında (+9) olması gerekir. Şifre gizliliğini sıkı bir şekilde korumak tamamen kullanıcının sorumluluğundadır. Anahtarların paylaşılması veya zayıf koruma nedeniyle veri sızıntısı yaşanması sizin sorumluluğunuzdadır.",
+    "section2Title": "2. Sıkı İade Koşulları",
+    "section2Desc": "Ödemeler resmi olarak Xsolla üzerinden gerçekleştirilir. İadeler yalnızca platformdaki teknik arızalar durumunda değerlendirilir. 'Oyunu beğenmeme' veya kişisel tercih değişiklikleri gibi basit öznel nedenler iade için geçerli bir sebep sayılmaz.",
+    "section3Title": "3. Hile ve Hack Karşıtı Zorunluluklar",
+    "section3Desc": "Oyun manipülasyonlarına karşı sıfır tolerans politikası uyguluyoruz. Sistem hileleri, enjeksiyon kodları, hack programları çalıştırmak, oyun kodlarını değiştirmek veya dosyalara saldırmak kesinlikle yasaktır. Herhangi bir kötü niyetli girişim, hesabın ve donanımın (hardware) derhal ve kalıcı olarak yasaklanmasına neden olur.",
+    "section4Title": "4. Geçerli Kanun",
+    "section4Desc": "Bu şartlar tamamen Özbekistan Cumhuriyeti mevzuatına tabidir ve buna göre yorumlanır. Her türlü resmi hukuki ihtilaf veya anlaşmazlık münhasıran Özbekistan yetkili mahkemelerine sunulacaktır."
   }
 }

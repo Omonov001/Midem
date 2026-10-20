@@ -194,5 +194,29 @@
   "ComingSoon": "Coming Soon",
   "common": {
     "loading": "Loading..."
+  },
+  "PrivacyPolicy": {
+    "title": "Privacy",
+    "subtitle": "Policy",
+    "lastUpdated": "Last updated: October 20, 2026. This privacy policy details how we securely handle, gather, and protect your specific platform information.",
+    "section1Title": "1. Data We Gather",
+    "section1Desc": "We limit our collection of data to provide a direct connection. We only collect your Username, Full Name, Email Address, and IP Address to ensure authentic access and operational stability on our launcher ecosystem.",
+    "section2Title": "2. Payment & Checkout Security",
+    "section2Desc": "Security is our core priority. Financial purchases are exclusively executed through our licensed billing operator, Xsolla. No credit cards, token histories, or financial parameters are ever logged or held directly on our servers.",
+    "section3Title": "3. Protected Account Deletion",
+    "section3Desc": "You hold complete rights to erase your stored records. To secure accounts against accidental termination or single-click errors, we require an intentional multi-step deletion interface containing manual text input validation before permanently scrubbing credentials from our cloud infrastructure."
+  },
+  "TermsOfUse": {
+    "title": "Terms of",
+    "subtitle": "Use",
+    "lastUpdated": "Last updated: October 20, 2026. By logging into our service, you explicitly promise to follow our standard legal agreements.",
+    "section1Title": "1. Age Limits & Password Rules",
+    "section1Desc": "Users must be at least 9 years old (+9) to sign up and establish a platform profile. Preserving strict password secrecy is entirely the user’s responsibility. Sharing keys or causing data leakage from poor credential protection remains your liability.",
+    "section2Title": "2. Strict Refund Conditions",
+    "section2Desc": "Payments are processed officially through Xsolla. Refunds are only evaluated for technical platform breakdowns. Simple subjective causes, such as 'disliking a game,' or basic personal preference changes, will not qualify as acceptable reasons for a transaction refund.",
+    "section3Title": "3. Anti-Cheat & Anti-Hack Enforcement",
+    "section3Desc": "We hold a zero-tolerance policy against game manipulation. Running system cheats, injection code, injection hacks, modding binary game codes, or attacking files is strictly forbidden. Engaging in malicious exploits triggers immediate and permanent legal hardware or profile restrictions.",
+    "section4Title": "4. Governing Law",
+    "section4Desc": "These terms are fully governed by and structured according to the legislation of the Republic of Uzbekistan. Any official judicial legal disputes or conflicts shall be submitted exclusively to the competent courts of Uzbekistan."
   }
 }

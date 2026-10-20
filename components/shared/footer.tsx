@@ -96,10 +96,16 @@ function Footer() {
             © {new Date().getFullYear()} {t("FooterText2")}
           </p>
           <div className="flex gap-6">
-            <Link href="#" className="hover:text-blue-500 transition-colors">
+            <Link
+              href="/PrivacyPolicy"
+              className="hover:text-blue-500 transition-colors"
+            >
               {t("FooterText3")}
             </Link>
-            <Link href="#" className="hover:text-blue-500 transition-colors">
+            <Link
+              href="/TermsOfUse"
+              className="hover:text-blue-500 transition-colors"
+            >
               {t("FooterText4")}
             </Link>
           </div>

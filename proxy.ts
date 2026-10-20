@@ -25,6 +25,8 @@ const isPublicRoute = createRouteMatcher([
   "/:locale/games",
   "/:locale/games/(.*)",
   "/:locale/contact",
+  "/:locale/PrivacyPolicy", // ← Yangi qo'shildi: Kirish ochiq
+  "/:locale/TermsOfUse", // ← Yangi qo'shildi: Kirish ochiq
 ]);
 
 // Developer panel

@@ -159,5 +159,29 @@
   "ComingSoon": "Tez orada",
   "common": {
     "loading": "Yuklanmoqda..."
+  },
+  "PrivacyPolicy": {
+    "title": "Maxfiylik",
+    "subtitle": "Siyosati",
+    "lastUpdated": "Oxirgi yangilanish: 20-oktabr, 2026-yil. Ushbu maxfiylik siyosati platformadagi ma'lumotlaringiz qanday xavfsiz qayta ishlanishi, yig'ilishi va himoya qilinishini batafsil tushuntiradi.",
+    "section1Title": "1. Biz yig'adigan ma'lumotlar",
+    "section1Desc": "Biz ma'lumotlar yig'ishni minimal darajada cheklaymiz. Launcher ekotizimida xavfsiz kirish va barqaror ishlashni ta'minlash uchun faqat Foydalanuvchi nomi (Username), To'liq ism, Elektron pochta manzili va IP-manzilingizni yig'amiz.",
+    "section2Title": "2. To'lovlar va hisob-kitob xavfsizligi",
+    "section2Desc": "Xavfsizlik — bizning eng oliy maqsadimiz. Moliyaviy xaridlar faqatgina litsenziyalangan hamkorimiz Xsolla to'lov operatori orqali amalga oshiriladi. Kredit kartalari, tokenlar tarixi yoki boshqa moliyaviy ma'lumotlar hech qachon bizning serverlarimizda qayd etilmaydi va saqlanmaydi.",
+    "section3Title": "3. Himoyalangan akkauntni o'chirish",
+    "section3Desc": "Siz o'z ma'lumotlaringizni o'chirish huquqiga egasiz. Akkauntlarni tasodifan yoki bir marta bosish orqali o'chirib yuborish xatolaridan himoya qilish uchun, ma'lumotlarni bulutli serverlarimizdan butunlay o'chirishdan oldin qo'lda matn kiritish orqali tasdiqlashni talab qiluvchi ko'p bosqichli o'chirish oynasidan foydalanamiz."
+  },
+  "TermsOfUse": {
+    "title": "Foydalanish",
+    "subtitle": "Shartlari",
+    "lastUpdated": "Oxirgi yangilanish: 20-oktabr, 2026-yil. Xizmatimizga kirish orqali siz rasmiy huquqiy kelishuv shartlariga rioya qilish majburiyatini olasiz.",
+    "section1Title": "1. Yosh chegarasi va parol qoidalari",
+    "section1Desc": "Foydalanuvchilar platformada ro'yxatdan o'tishlari uchun kamida 9 yoshda (+9) bo'lishlari shart. Parolning qat'iy sir tutilishini ta'minlash to'liq foydalanuvchining zimmasidadir. Parollarni boshqalarga berish yoki noto'g'ri himoya tufayli ma'lumotlar sizib chiqishi sizning javobgarligingiz hisoblanadi.",
+    "section2Title": "2. Qat'iy pul qaytarish (Refund) shartlari",
+    "section2Desc": "To'lovlar rasmiy ravishda Xsolla orqali amalga oshiriladi. Pulni qaytarish arizalari faqat platformadagi texnik nosozliklar holatida ko'rib chiqiladi. 'O'yin yoqmagani' yoki shaxsiy fikrning o'zgargani kabi oddiy sabablar pulni qaytarib berish uchun asos bo'la olmaydi.",
+    "section3Title": "3. Anti-Cheat va xakerlikka qarshi choralar",
+    "section3Desc": "Biz o'yin jarayonini manipulyatsiya qilishga mutlaqo toqat qilmaymiz. Tizim cheatlari, injeksion kodlar, xakerlik dasturlarini ishga tushirish, o'yin kodlarini o'zgartirish yoki fayllarga hujum qilish qat'iyan taqiqlanadi. Har qanday zararli urinishlar akkaunt va apparat qismini (hardware) darhol va umrbod bloklanishiga olib keladi.",
+    "section4Title": "4. Amal qiluvchi qonunchilik",
+    "section4Desc": "Ushbu shartlar to'liq O'zbekiston Respublikasi qonunchiligiga muvofiq tartibga solinadi va talqin etiladi. Har qanday rasmiy huquqiy nizolar yoki ziddiyatlar eksklyuziv ravishda O'zbekiston Respublikasining vakolatli sudlarida ko'rib chiqiladi."
   }
 }
