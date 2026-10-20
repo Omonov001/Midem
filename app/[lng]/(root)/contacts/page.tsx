@@ -275,16 +275,6 @@ function ContactPage() {
               <a
                 target="_blank"
                 rel="noopener noreferrer"
-                href="https://t.me/MidemRobuxServis"
-                className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#0088cc] py-4 font-bold text-white shadow-lg shadow-blue-500/20 transition-all active:scale-95"
-              >
-                <BiLogoTelegram size={20} />
-                Telegram
-              </a>
-
-              <a
-                target="_blank"
-                rel="noopener noreferrer"
                 href="https://www.instagram.com/midem__/"
                 className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-tr from-yellow-500 via-red-500 to-purple-600 py-4 font-bold text-white shadow-lg shadow-pink-500/20 transition-all active:scale-95"
               >
