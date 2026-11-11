@@ -167,7 +167,7 @@
     "section1Title": "1. Biz yig'adigan ma'lumotlar",
     "section1Desc": "Biz ma'lumotlar yig'ishni minimal darajada cheklaymiz. Launcher ekotizimida xavfsiz kirish va barqaror ishlashni ta'minlash uchun faqat Foydalanuvchi nomi (Username), To'liq ism, Elektron pochta manzili va IP-manzilingizni yig'amiz.",
     "section2Title": "2. To'lovlar va hisob-kitob xavfsizligi",
-    "section2Desc": "Xavfsizlik — bizning eng oliy maqsadimiz. Moliyaviy xaridlar faqatgina litsenziyalangan hamkorimiz Xsolla to'lov operatori orqali amalga oshiriladi. Kredit kartalari, tokenlar tarixi yoki boshqa moliyaviy ma'lumotlar hech qachon bizning serverlarimizda qayd etilmaydi va saqlanmaydi.",
+    "section2Desc": "MI Coin — MIDEM platformasining virtual valyutasi. Foydalanuvchilar MI Coin'ni Merchant of Record (MoR) sifatida faoliyat yurituvchi Xsolla orqali sotib olishlari mumkin. MI Coin balanslari va ularga tegishli tranzaksiya yozuvlari MIDEM serverlarida xavfsiz saqlanadi. To'lov kartasi ma'lumotlari Xsolla va uning to'lov xizmatlari provayderlari tomonidan qayta ishlanadi va MIDEM serverlarida saqlanmaydi.",
     "section3Title": "3. Himoyalangan akkauntni o'chirish",
     "section3Desc": "Siz o'z ma'lumotlaringizni o'chirish huquqiga egasiz. Akkauntlarni tasodifan yoki bir marta bosish orqali o'chirib yuborish xatolaridan himoya qilish uchun, ma'lumotlarni bulutli serverlarimizdan butunlay o'chirishdan oldin qo'lda matn kiritish orqali tasdiqlashni talab qiluvchi ko'p bosqichli o'chirish oynasidan foydalanamiz."
   },
@@ -178,7 +178,7 @@
     "section1Title": "1. Yosh chegarasi va parol qoidalari",
     "section1Desc": "Foydalanuvchilar platformada ro'yxatdan o'tishlari uchun kamida 9 yoshda (+9) bo'lishlari shart. Parolning qat'iy sir tutilishini ta'minlash to'liq foydalanuvchining zimmasidadir. Parollarni boshqalarga berish yoki noto'g'ri himoya tufayli ma'lumotlar sizib chiqishi sizning javobgarligingiz hisoblanadi.",
     "section2Title": "2. Qat'iy pul qaytarish (Refund) shartlari",
-    "section2Desc": "To'lovlar rasmiy ravishda Xsolla orqali amalga oshiriladi. Pulni qaytarish arizalari faqat platformadagi texnik nosozliklar holatida ko'rib chiqiladi. 'O'yin yoqmagani' yoki shaxsiy fikrning o'zgargani kabi oddiy sabablar pulni qaytarib berish uchun asos bo'la olmaydi.",
+    "section2Desc": "Xaridlar Merchant of Record (MoR) sifatida faoliyat yurituvchi Xsolla orqali amalga oshiriladi. Pulni qaytarish so'rovlari Xsolla'ning pulni qaytarish siyosati va amaldagi qonunchilikka muvofiq ko'rib chiqiladi.",
     "section3Title": "3. Anti-Cheat va xakerlikka qarshi choralar",
     "section3Desc": "Biz o'yin jarayonini manipulyatsiya qilishga mutlaqo toqat qilmaymiz. Tizim cheatlari, injeksion kodlar, xakerlik dasturlarini ishga tushirish, o'yin kodlarini o'zgartirish yoki fayllarga hujum qilish qat'iyan taqiqlanadi. Har qanday zararli urinishlar akkaunt va apparat qismini (hardware) darhol va umrbod bloklanishiga olib keladi.",
     "section4Title": "4. Amal qiluvchi qonunchilik",
